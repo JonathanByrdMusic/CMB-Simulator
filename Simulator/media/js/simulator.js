@@ -458,7 +458,7 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 				// First point of the curve. Move to the point then use Catmull-Rom
 				// curveto (Raphael) to join the initial points
 				if(i==0){
-					p = ["M", x, y, (data[0].length <= 2 ? "L" : "R")];
+					p = ["M", x, y, "L"];
 				}else{
 					// If we are not at the first or last points we
 					// can check if this is a trough or peak
