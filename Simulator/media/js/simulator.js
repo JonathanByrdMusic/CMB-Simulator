@@ -351,6 +351,62 @@
 		return cl;
 	}
 
+	// Draw dynamic y-axis tick marks and labels
+PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
+
+    // Remove old y-axis ticks before drawing new ones
+    if(this.chart.ylines) this.chart.ylines.remove();
+    if(this.chart.ytext) this.chart.ytext.remove();
+
+    var l = this.opts.offset.left;
+    var t = this.opts.offset.top;
+    var h = this.opts.offset.height;
+
+    var tickCount = 5;
+    var path = [];
+    this.chart.ytext = this.chart.holder.set();
+
+    for(var i = 0; i <= tickCount; i++){
+
+        var fraction = i / tickCount;
+
+        // Screen y-coordinate. Browser y increases downward.
+        var y = t + h - fraction * h;
+
+        // Data value at this tick
+        var value = Ymin + fraction * (Ymax - Ymin);
+
+        // Format labels
+        var label;
+        if(value >= 1000){
+            label = Math.round(value / 100) * 100;
+        }else if(value >= 100){
+            label = Math.round(value / 10) * 10;
+        }else{
+            label = Math.round(value);
+        }
+
+        // Tick mark
+        path = path.concat(["M", l - 5, y, "L", l, y]);
+
+        // Text label
+        this.chart.ytext.push(
+            this.chart.holder.text(l - 10, y, label)
+                .attr({
+                    fill: "black",
+                    "text-anchor": "end",
+                    "font-size": this.opts["font-size"] * 0.55
+                })
+        );
+    }
+
+    this.chart.ylines = this.chart.holder.path(path)
+        .attr({
+            stroke: "#AAAAAA",
+            "stroke-width": 1
+        });
+}
+
 	// Anything that needs regular updating on the power spectrum
 	PowerSpectrum.prototype.draw = function(){
 
@@ -381,6 +437,10 @@
 			Xscale = (this.opts.offset.width) / Xrange;
 			Yrange = (Ymax-Ymin);
 			Yscale = (this.opts.offset.height) / Yrange;
+
+			// Draw/update y-axis tick labels using the same scale as the red curve
+			this.drawYTicks(Ymin, Ymax);
+
 			this.firsttrough = 0;
 			this.firstpeak = 0;
 			this.firstpeakamp = 0;
