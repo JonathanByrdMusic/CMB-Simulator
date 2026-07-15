@@ -347,9 +347,9 @@
 	}
 
 	// A scaling for the y-axis value
-	PowerSpectrum.prototype.scaleY = function(l,cl){
-		return cl;
-	}
+PowerSpectrum.prototype.scaleY = function(l,cl){
+    return cl;
+}
 
 // Draw dynamic y-axis tick marks and labels inside the plot
 PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
@@ -402,13 +402,6 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
                 })
         );
     }
-
-    this.chart.ylines = this.chart.holder.path(path)
-        .attr({
-            stroke: "#AAAAAA",
-            "stroke-width": 1
-        });
-}
 
     this.chart.ylines = this.chart.holder.path(path)
         .attr({
