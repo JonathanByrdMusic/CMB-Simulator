@@ -351,7 +351,7 @@
 		return cl;
 	}
 
-	// Draw dynamic y-axis tick marks and labels
+// Draw dynamic y-axis tick marks and labels inside the plot
 PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 
     // Remove old y-axis ticks before drawing new ones
@@ -364,19 +364,21 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 
     var tickCount = 5;
     var path = [];
+
     this.chart.ytext = this.chart.holder.set();
 
     for(var i = 0; i <= tickCount; i++){
 
         var fraction = i / tickCount;
 
-        // Screen y-coordinate. Browser y increases downward.
+        // Browser y-coordinates increase downward,
+        // so larger data values must be drawn higher.
         var y = t + h - fraction * h;
 
         // Data value at this tick
         var value = Ymin + fraction * (Ymax - Ymin);
 
-        // Format labels
+        // Format labels cleanly
         var label;
         if(value >= 1000){
             label = Math.round(value / 100) * 100;
@@ -386,19 +388,27 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
             label = Math.round(value);
         }
 
-        // Tick mark
-        path = path.concat(["M", l - 5, y, "L", l, y]);
+        // Small tick mark pointing inward
+        path = path.concat(["M", l, y, "L", l + 6, y]);
 
-        // Text label
+        // Label inside the plot, just right of the y-axis
         this.chart.ytext.push(
-            this.chart.holder.text(l - 10, y, label)
+            this.chart.holder.text(l + 9, y, label)
                 .attr({
                     fill: "black",
-                    "text-anchor": "end",
-                    "font-size": this.opts["font-size"] * 0.55
+                    "text-anchor": "start",
+                    "font-size": this.opts["font-size"] * 0.5,
+                    "opacity": 0.75
                 })
         );
     }
+
+    this.chart.ylines = this.chart.holder.path(path)
+        .attr({
+            stroke: "#AAAAAA",
+            "stroke-width": 1
+        });
+}
 
     this.chart.ylines = this.chart.holder.path(path)
         .attr({
