@@ -302,7 +302,15 @@
 
 		// Draw the axes labels
 		this.chart.xLabel = this.chart.holder.text(l + w/2, t + h + b*0.5, "Scale on the sky").attr({fill: (this.opts.xaxis.label.color ? this.opts.xaxis.label.color : "black"),'font-size': this.opts.font,'font-family': this.opts.xaxis.label.font });
-		this.chart.yLabel = this.chart.holder.text(l*0.5, t+(h/2), "Anisotropy "+ell+"("+ell+"+1) C"+ell+"").attr({fill: (this.opts.yaxis.label.color ? this.opts.yaxis.label.color : "black"),'font-size': this.opts.font,'font-family': this.opts.yaxis.label.font }).rotate(270);
+		this.chart.yLabel = this.chart.holder.text(
+    l*0.5,
+    t+(h/2),
+    "Anisotropy " + ell + "(" + ell + "+1) C" + ell + " (μK²)"
+).attr({
+    fill: (this.opts.yaxis.label.color ? this.opts.yaxis.label.color : "black"),
+    'font-size': this.opts.font,
+    'font-family': this.opts.yaxis.label.font
+}).rotate(270);
 
 		// Draw angular labels on chart
 		if(this.opts.xaxis.ticks){
