@@ -668,7 +668,7 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 					if(this.json.extrema[i][0]==val) break;
 				}
 
-				if(i >= this.json.extrema.length) this.callback.context.error("Oh dear. We couldn't find the CMB fluctuations for this universe (&Omega;<sub>b</sub> = "+b+", &Omega;<sub>c</sub> = "+c+", &Omega;<sub>&Lambda;</sub> = "+l+")");
+				if(i >= this.json.extrema.length) this.callback.context.error("We couldn't find the CMB fluctuations for this universe (&Omega;<sub>b</sub> = "+b+", &Omega;<sub>c</sub> = "+c+", &Omega;<sub>&Lambda;</sub> = "+l+")That sucks. :-(");
 				else {
 					data = new Array(this.json.extrema[i].length);
 					for(j = 0 ; j < this.json.extrema[i].length ; j++){
