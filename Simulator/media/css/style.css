@@ -801,15 +801,6 @@ a.button.ouruniverse:focus-visible {
     border-color: var(--space-border);
 }
 
-#options a.button {
-    min-width: 250px;
-    margin-left: 16px;
-}
-
-#options a.button:first-child {
-    margin-left: 0;
-}
-
 /* =========================================================
    Configuration dialog
    ========================================================= */
