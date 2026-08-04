@@ -202,10 +202,10 @@
 			'font-size': fs,
 			'font': fs+'px',
 			'offset' : {
-				top: (this.fullscreen ? fs : 1),
-				left : (this.fullscreen ? fs*2 : fs*1.5),
-				right : (this.fullscreen ? fs : 1),
-				bottom : (this.fullscreen ? fs*2 : fs*1.5)
+				top: (this.fullscreen ? fs : fs * 1.2),
+				left: (this.fullscreen ? fs * 2 : fs * 1.5),
+				right: (this.fullscreen ? fs : fs * 0.75),
+				bottom: (this.fullscreen ? fs * 2 : fs * 1.5)
 			},
 			'grid': {
 				'color': "rgb(0,0,0)",
@@ -229,7 +229,7 @@
 			},
 			'yaxis': {
 				'min': 0,
-				'max': 6500,
+				'max': 8000,
 				'label': {
 					'color': co,
 					'font' : ff
@@ -1636,31 +1636,26 @@ this.context.audio.setHotness(hotness);
 				sim.omega_l.setValue(0.00);
 				sim.ps.loadData('omega_b',sim.omega_b.value,sim.omega_c.value,sim.omega_l.value);
 			}),
-			$('<a class="button flatten" href="#">Flatten</a>').on('click',{me:this},function(e){
-				e.preventDefault();
-				var sim = e.data.me;
-				var ob = sim.omega_b.value;
-				var oc = sim.omega_c.value;
-				var ol = sim.omega_l.value;
-				var tot = (ob + oc + ol);
-				if(tot > 1){
-					// Currently open
-					if(ob + oc <= 1.0){
-						// Reduce dark energy
-						sim.omega_l.setValue(1-oc-ob);
-					}else{
-						// Change Omega_c and remove dark energy
-						sim.omega_c.setValue(1-ob);
-						sim.omega_l.setValue(0.000);
-					}
-				}else if(tot < 1){
-					// Currently closed
-					if(ob + oc <= 1.0){
-						sim.omega_b.setValue(1-oc-ol);
-					}else sim.omega_c.setValue(1-ob);
+			$('<a class="button ouruniverse" href="#">Our universe</a>').on(
+				'click',
+				{ me: this },
+				function (e) {
+					e.preventDefault();
+
+					var sim = e.data.me;
+
+					sim.omega_b.setValue(sim.our.omega_b);
+					sim.omega_c.setValue(sim.our.omega_c);
+					sim.omega_l.setValue(sim.our.omega_l);
+
+					sim.ps.loadData(
+						'omega_b',
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value
+					);
 				}
-				sim.ps.loadData('omega_b',sim.omega_b.value,sim.omega_c.value,sim.omega_l.value);
-			})
+			)
 		);
 
 		// Set up the configuration form
