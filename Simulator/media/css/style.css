@@ -223,13 +223,6 @@ a.button:hover, a.button:focus { background-color: #ffc40d; color: black; transi
 #options a.button { margin-left: 1em; }
 #options a.button:first-child { margin-left: 0px; }
 
-/* Set the colours for the slider bars */
-.b, #omega_b_holder .ui-widget-header { background-color: #F89406; }
-.c, #omega_c_holder .ui-widget-header { background-color: #049CDB; color: white; }
-.l, #omega_l_holder .ui-widget-header { background-color: #46a546; color: white; }
-.b, .c, .l { padding: 0.25em; }
-.ui-slider .ui-slider-range.ui-slider-range-min { border: 1px solid #777; margin-top: -1px; }
-
 .padded { margin: 32px 0px 0px 0px;}
 
 /* Classes to hide things */
@@ -294,3 +287,594 @@ a.button:hover, a.button:focus { background-color: #ffc40d; color: black; transi
 	#options a.button:first-child { margin-top: 0px; }
 }
 
+/* =========================================================
+   Simons Observatory restyle
+   ========================================================= */
+
+:root {
+    --so-orange: #f26522;
+    --so-orange-dark: #d94f12;
+
+    --so-blue: #21468b;
+    --so-blue-dark: #17356e;
+
+    --so-ink: #292929;
+    --so-muted: #696969;
+
+    --so-background: #ffffff;
+    --so-panel-soft: #eef5f8;
+    --so-border: #d9e1e5;
+
+    --slider-track: #f5f5f5;
+    --slider-fill: #dddddd;
+    --slider-border: #a9a9a9;
+    --slider-thumb: #e8e8e8;
+}
+
+/* Make sizing more predictable everywhere. */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    width: 100%;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 32px 36px;
+
+    color: var(--so-ink);
+    background: var(--so-background);
+
+    font-family: "Figtree", Helvetica, Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   Header
+   ========================================================= */
+
+#header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+
+    width: 100%;
+    max-width: 1536px;
+    margin: 0 auto 32px;
+}
+
+img.logo {
+    width: 190px;
+    height: auto;
+    margin: 0;
+    flex: 0 0 auto;
+    float: none;
+}
+
+h1 {
+    margin: 18px 0 0;
+
+    color: var(--so-blue);
+    font-size: clamp(1.8rem, 3vw, 2.45rem);
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
+.subtitle {
+    display: block;
+    margin-top: 12px;
+
+    color: var(--so-muted);
+    font-size: 0.95rem;
+    line-height: 1.35;
+    font-weight: 400;
+    letter-spacing: normal;
+}
+
+/* =========================================================
+   Typography
+   ========================================================= */
+
+h2,
+h3 {
+    color: var(--so-blue);
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+h3 {
+    margin: 32px 0 12px;
+    font-size: 1.25rem;
+}
+
+h3:first-child {
+    margin-top: 0;
+}
+
+p {
+    margin: 0 0 1rem;
+}
+
+a {
+    color: var(--so-orange-dark);
+    text-decoration: none;
+}
+
+a:visited {
+    color: var(--so-orange-dark);
+}
+
+a:hover,
+a:focus-visible {
+    color: var(--so-orange);
+    text-decoration: underline;
+}
+
+a:active {
+    color: var(--so-ink);
+}
+
+/* =========================================================
+   Main simulator layout
+   ========================================================= */
+
+#app,
+#footer {
+    width: 100%;
+    max-width: 1536px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+#parameters {
+    min-width: 270px;
+}
+
+#parameters,
+#powerspectrum {
+    padding-right: 32px;
+}
+
+.parameter {
+    margin-bottom: 28px;
+}
+
+.parameter label {
+    display: block;
+    margin-bottom: 10px;
+
+    color: var(--so-ink);
+    font-size: 0.95rem;
+    line-height: 1.3;
+    font-weight: 500;
+}
+
+.parameter .ui-slider {
+    margin-top: 0;
+}
+
+/* =========================================================
+   jQuery UI sliders
+   Matches the 12 px track / 24 px handle sizing used on
+   the spherical-harmonics site.
+   ========================================================= */
+
+.ui-slider {
+    position: relative;
+    width: 100%;
+    cursor: pointer;
+}
+
+.ui-slider-horizontal {
+    height: 12px;
+}
+
+.ui-slider.ui-widget-content {
+    border: 1px solid var(--slider-border);
+    border-radius: 999px;
+    background: var(--slider-track);
+
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/*
+ * All three filled portions are neutral gray.
+ * These selectors override the old orange, blue, and green rules.
+ */
+#omega_b_holder .ui-widget-header,
+#omega_c_holder .ui-widget-header,
+#omega_l_holder .ui-widget-header,
+.ui-slider .ui-slider-range {
+    border: 0;
+    background: var(--slider-fill);
+}
+
+.ui-slider-horizontal .ui-slider-range {
+    top: 0;
+    height: 100%;
+    margin: 0;
+    border-radius: 999px;
+}
+
+.ui-slider-horizontal .ui-slider-range-min {
+    left: 0;
+}
+
+/* Remove the old one-pixel range adjustment. */
+.ui-slider .ui-slider-range.ui-slider-range-min {
+    margin-top: 0;
+    border: 0;
+}
+
+.ui-slider .ui-slider-handle {
+    position: absolute;
+    z-index: 2;
+
+    width: 24px;
+    height: 24px;
+    margin-top: 0;
+    margin-left: -12px;
+
+    border: 1px solid #999999;
+    border-radius: 50%;
+    outline: none;
+
+    background: var(--slider-thumb);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+
+    cursor: grab;
+}
+
+.ui-slider-horizontal .ui-slider-handle {
+    top: -7px;
+}
+
+.ui-slider .ui-slider-handle:hover {
+    background: #ffffff;
+}
+
+.ui-slider .ui-slider-handle:active {
+    cursor: grabbing;
+}
+
+.ui-slider .ui-slider-handle:focus-visible {
+    outline: 3px solid rgba(33, 70, 139, 0.28);
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   Plot and map
+   ========================================================= */
+
+#powerspectrum {
+    color: var(--so-ink);
+    background: var(--so-background);
+}
+
+#powerspectrum,
+#map,
+#fft {
+    overflow: hidden;
+    border: 1px solid var(--so-border);
+    border-radius: 18px 34px 18px 34px;
+}
+
+#map {
+    background: linear-gradient(to bottom, #45484d 0%, #000000 100%);
+}
+
+#map .label {
+    padding: 0.35rem 0.5rem;
+
+    color: #ffffff;
+    background: rgba(70, 70, 70, 0.82);
+
+    font-size: 0.78rem;
+    line-height: 1.2;
+}
+
+#map .label.scale {
+    color: var(--so-ink);
+    background: rgba(255, 255, 255, 0.88);
+    border-color: var(--so-ink);
+}
+
+/* =========================================================
+   About section
+   ========================================================= */
+
+#about {
+    width: min(100%, 1100px);
+    margin: 0 auto 48px;
+    padding: 34px 38px;
+
+    color: #303030;
+    background:
+        linear-gradient(
+            135deg,
+            #f3f8fa 0%,
+            #eef2f7 55%,
+            #e8e8f1 100%
+        );
+
+    border: 1px solid var(--so-border);
+    border-radius: 18px 34px 18px 34px;
+}
+
+#about p {
+    max-width: 82ch;
+    line-height: 1.7;
+}
+
+/*
+ * Retain the normal/dark-matter/dark-energy labels,
+ * but make them less saturated than the original badges.
+ */
+.b,
+.c,
+.l {
+    display: inline-block;
+    padding: 0.12em 0.35em;
+    border-radius: 4px;
+}
+
+.b {
+    color: #6d350e;
+    background: #f4dfcf;
+}
+
+.c {
+    color: #173f68;
+    background: #dce9f2;
+}
+
+.l {
+    color: #31563c;
+    background: #deeadf;
+}
+
+/* =========================================================
+   Buttons and circular controls
+   ========================================================= */
+
+a.button {
+    min-height: 44px;
+    height: auto;
+    padding: 10px 22px;
+
+    color: #ffffff;
+    background: var(--so-orange);
+    border: 1px solid var(--so-orange);
+    border-radius: 999px;
+
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    font-weight: 600;
+
+    transition:
+        color 0.18s ease,
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.08s ease;
+}
+
+a.button:visited {
+    color: #ffffff;
+}
+
+a.button:hover,
+a.button:focus-visible {
+    color: #ffffff;
+    background: #111111;
+    border-color: #111111;
+    text-decoration: none;
+}
+
+a.button:active {
+    transform: translateY(1px);
+}
+
+.toggle a {
+    background-color: #aaaaaa;
+    transition: background-color 0.18s ease;
+}
+
+.toggle a:hover,
+.toggle a:focus-visible {
+    background-color: var(--so-orange);
+}
+
+#help a.abouton:hover,
+#help a.abouton:focus-visible {
+    background-color: var(--so-blue);
+}
+
+body.adv #advancedtoggle a {
+    background-color: var(--so-blue);
+}
+
+/* =========================================================
+   Options dialog
+   ========================================================= */
+
+#config {
+    width: min(90%, 520px);
+    padding: 32px;
+
+    color: var(--so-ink);
+    background: #ffffff;
+    border: 1px solid var(--so-border);
+    border-radius: 18px 34px 18px 34px;
+}
+
+.lightbox_bg {
+    position: fixed;
+    z-index: 101;
+    inset: 0;
+
+    background: rgba(20, 24, 32, 0.52);
+    backdrop-filter: blur(2px);
+}
+
+.lightbox_top {
+    z-index: 102;
+    max-width: 520px;
+
+    background: #ffffff;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+}
+
+/* =========================================================
+   Messages
+   ========================================================= */
+
+#error,
+#warning {
+    padding: 0.75rem 1rem;
+}
+
+#error {
+    color: #ffffff;
+    background: #b83224;
+}
+
+#warning {
+    color: #332900;
+    background: #f4d675;
+}
+
+/* =========================================================
+   Responsive layout
+   ========================================================= */
+
+@media (max-width: 1000px) {
+    #app,
+    #container {
+        display: block;
+    }
+
+    #parameters,
+    #powerspectrum,
+    .column {
+        display: block;
+        width: 100%;
+        padding: 0;
+    }
+
+    #parameters {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    #map,
+    #powerspectrum {
+        margin-top: 48px;
+    }
+
+    .column,
+    #map,
+    #map img,
+    #map canvas,
+    #map .labels {
+        width: 100%;
+        height: auto;
+    }
+
+    h1 small {
+        display: block;
+    }
+}
+
+@media (max-width: 760px) {
+    body {
+        padding: 24px 20px;
+    }
+
+    #header {
+        align-items: center;
+    }
+
+    img.logo {
+        width: 140px;
+    }
+
+    h1 {
+        margin-top: 8px;
+    }
+
+    #about {
+        padding: 28px 24px;
+    }
+}
+
+@media (max-width: 560px) {
+    body {
+        padding: 20px 16px;
+    }
+
+    #header {
+        display: block;
+        text-align: center;
+    }
+
+    img.logo {
+        display: block;
+        width: 110px;
+        margin: 0 auto 14px;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 8vw, 1.9rem);
+    }
+
+    .subtitle {
+        margin-top: 8px;
+        font-size: 0.88rem;
+    }
+
+    #about {
+        margin-bottom: 32px;
+        padding: 24px 20px;
+    }
+
+    #map,
+    #powerspectrum {
+        margin-top: 32px;
+    }
+
+    #footer {
+        display: block;
+    }
+
+    #output,
+    body.adv #firstpeak.advanced,
+    #options {
+        display: block;
+        text-align: center;
+    }
+
+    #output,
+    #options {
+        margin-top: 16px;
+    }
+
+    #options a.button {
+        display: block;
+        width: 100%;
+        margin: 10px 0 0;
+    }
+
+    #options a.button:first-child {
+        margin-top: 0;
+    }
+}

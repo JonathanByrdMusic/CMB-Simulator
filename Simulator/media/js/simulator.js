@@ -429,7 +429,10 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		// Build the power spectrum curve
 		if(this.data){
 
-			var p,max,y,x,x1,prevy,tempx,tempy,data,peak,trough,Xmin,Xmax,Ymin,Ymax,Yrange,Yscale,Xrange,Xscale;
+			var p, max, y, x, x1, x2, prevy, tempx, tempy;
+			var data, peak, trough;
+			var Xmin, Xmax, Ymin, Ymax;
+			var Yrange, Yscale, Xrange, Xscale;
 			max = 0;
 			data = this.data;
 			Xmin = this.scaleX(this.opts.xaxis.min);
@@ -646,9 +649,9 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 					data.shift();
 
 					// Restructure data
-					n = data.length/2;
-					x = new Array(n);
-					y = new Array(n);
+					var n = data.length / 2;
+					var x = new Array(n);
+					var y = new Array(n);
 					for(var i = 0; i < n ; i++){
 						x[i] = data[i*2];
 						y[i] = data[i*2 + 1];
@@ -1699,11 +1702,6 @@ this.context.audio.setHotness(hotness);
 			e.data.me.sky.update();
 			e.data.me.update();
 		});
-		// Make labels trigger click on their inputs
-		$('label').on('click',{me:this},function(e){
-			var labelID = $(this).attr('for');
-			$('#config form input[name='+labelID+']').trigger('click');
-		});
 
 
 		// Bind keyboard events
@@ -1769,7 +1767,7 @@ this.context.audio.setHotness(hotness);
 			if(location.hash.substring(1)!="about" && $('#help').hasClass('on')) toggleAbout();
 		},500);
 
-		var newdiv = $('<div id="menu"><div id="help" class="toggle"><a href="#about" class="abouton">i</a><a href="#" class="aboutoff">&#8679;</a></div><div id="advancedtoggle" class="toggle"><a href="#powerspectrum"><img src="media/img/cleardot.gif" alt="Plot" title="Toggle power spectrum plot" /></a></div><div id="configtoggle" class="toggle"><a href="#config"><img src="media/img/cleardot.gif" alt="Options" title="Toggle options" /></a></div><div id="audiotoggle" class="toggle"><a href="#"><img src="media/img/cleardot.gif" alt="Audio" title="Toggle audio" /></a></div><div id="refreshtoggle" class="toggle"><a href="#"><img src="media/img/cleardot.gif" alt="Refresh" title="Refresh page" /></a></div></div>');
+		var newdiv = $('<div id="menu"><div id="help" class="toggle"><a href="#about" class="abouton">i</a><a href="#" class="aboutoff">&#8679;</a></div><div id="advancedtoggle" class="toggle"><a href="#powerspectrum"><img src="Simulator/media/img/cleardot.gif" alt="Plot" title="Toggle power spectrum plot" /></a></div><div id="configtoggle" class="toggle"><a href="#config"><img src="Simulator/media/img/cleardot.gif" alt="Options" title="Toggle options" /></a></div><div id="audiotoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Audio" title="Toggle audio" /></a></div><div id="refreshtoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Refresh" title="Refresh page" /></a></div></div>');
 		$('h1').before(newdiv);
 		$('#help .abouton a, #help .aboutoff a').on('click',toggleAbout);
 		$('#advancedtoggle a').on('click',{me:this},function(e){
@@ -1977,7 +1975,7 @@ this.context.audio.setHotness(hotness);
 		this.WK = 1-this.WM-this.WR-this.WV;	// Ned Wright's version
 		this.az = 1.0/(1+1.0*this.z);
 		this.age = 0;
-		for (i = 0; i != this.n; i++) {
+		for (var i = 0; i < this.n; i++) {
 			this.a = this.az*(i+0.5)/this.n;
 			this.adot = Math.sqrt(this.WK+(this.WM/this.a)+(this.WR/(this.a*this.a))+(this.WV*this.a*this.a));
 			this.age = this.age + 1/this.adot;
@@ -2006,7 +2004,7 @@ this.context.audio.setHotness(hotness);
 		this.DTT = 0.0;
 		this.DCMR = 0.0;
 		// do integral over a=1/(1+z) from az to 1 in n steps, midpoint rule
-		for (i = 0; i != this.n; i++) {
+		for (var i = 0; i < this.n; i++) {
 			this.a = this.az+(1-this.az)*(i+0.5)/this.n;
 			this.adot = Math.sqrt(this.WK+(this.WM/this.a)+(this.WR/(this.a*this.a))+(this.WV*this.a*this.a));
 			this.DTT = this.DTT + 1/this.adot;
