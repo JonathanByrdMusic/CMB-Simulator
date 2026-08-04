@@ -1546,7 +1546,7 @@ this.context.audio.setHotness(hotness);
 
 		// A place to cache the previous Omega values
 		this.previous = { omega_b: -1, omega_c: -1, omega_l: -1 };
-		this.exhibition = true;
+		this.exhibition = false;
 		this.fs = parseInt($('body').css('font-size'));
 
 		if(this.exhibition && $('body').width() > 1200){
