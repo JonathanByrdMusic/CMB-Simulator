@@ -432,7 +432,7 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		// Build the power spectrum curve
 		if(this.data){
 
-			var p, max, y, x, x1, x2, prevy, tempx, tempy;
+			var p, y, x, x1, x2, prevy, tempx, tempy;
 			var data, peak, trough;
 			var Xmin, Xmax, Ymin, Ymax;
 			var Yrange, Yscale, Xrange, Xscale;
@@ -464,7 +464,7 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 
 			//if(!this.chart.dots) this.chart.dots = this.chart.holder.set();
 
-			for (var i = 0, j = 0; i < data[0].length; i++) {
+			for (var i = 0; i < data[0].length; i++) {
 				tempy = this.scaleY(data[0][i],data[1][i]);
 				tempx = this.scaleX(data[0][i]);
 				y = (this.opts.offset.top + this.opts.offset.height - Yscale * (tempy - Ymin)).toFixed(2);
@@ -514,7 +514,6 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 					p = p.concat([x, y]);
 					prevy = y;
 				}
-				if(tempy > max) max = tempy;
 			}
 
 			// Now we make sure we don't display any parts of the curve that are outside the plot area
@@ -563,7 +562,7 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 	}
 
 	// Request the data file for the current Omega values (b,c,l) using the current Omega that has focus
-	PowerSpectrum.prototype.loadData = function(id,b,c,l,fn){
+	PowerSpectrum.prototype.loadData = function(id,b,c,l){
 
 		var file = "";
 
@@ -577,8 +576,6 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		}
 
 		this.log('Getting '+file+' for '+id)
-
-		var _obj = this;
 
 		// Reset data
 		this.json = "";
@@ -1859,7 +1856,6 @@ $('#normalizeScaleCheckbox').on(
 			return true;
 		}
 		// As we are using the hash anchor, we need to monitor it to check for changes
-		var hashstate = "";
 		setInterval(function(){
 			if(location.hash.substring(1)=="about" && !$('#help').hasClass('on')) toggleAbout();
 			if(location.hash.substring(1)!="about" && $('#help').hasClass('on')) toggleAbout();
@@ -2358,89 +2354,6 @@ $('#normalizeScaleCheckbox').on(
 			}
 		}
 		zigset(v);
-	}
-
-	// Re-cycled from LCOGT's Odin
-	function lightbox(lb,revert,callback){
-		if(!lb.length) return;
-		var l = lb.position().left;
-		var t = lb.position().top;
-		var h = $(document).height();
-		var parent = lb.parent();
-		var me = lb.detach();
-		$("body").append('<div class="lightbox_bg"></div>')
-		me.appendTo('body');
-		lb.addClass('lightbox_top').show().attr('role','dialog');
-
-		if(lb.find('.close').length==0) lb.prepend('<a href="#" class="close">&times;</a>');
-
-		$('.lightbox_top form').on('submit',{lb:lb,revert:revert},function(e){
-			if(e.data.revert && e.data.revert.length > 0){
-				if(e.data.revert.get(0).nodeName!="A") e.data.revert = e.data.revert.find('a').eq(0);
-				e.data.revert.focus();
-			}
-			closeLightbox(e.data.lb);
-		});
-
-		$('.lightbox_top .close').show().on('click',{lb:lb,revert:revert,callback:callback},function(e){
-			//e.preventDefault();
-			closeLightbox(e.data.lb);
-			e.data.revert.focus();
-			if(typeof e.data.callback==="function") e.data.callback.call();
-		});
-
-		$('.lightbox_bg').css({'height':''});
-		centre(lb);
-
-		$('.lightbox_bg').on('click',{lb:lb,revert:revert,callback:callback},function(e){
-			location.hash = "#";
-			closeLightbox(e.data.lb);
-			e.data.revert.focus();
-			if(typeof e.data.callback==="function") e.data.callback.call();
-		}).css({'height':h+'px'});
-
-		$(window).resize(function(){
-			if($(window).height() > $('.lightbox_top').height()) centre(lb);
-			else $('.lightbox_top').css('top',0)
-			$('.lightbox_bg').css({'height':$(document).height()+'px'});
-		});
-
-		$('.lightbox_top form input:visible:first').focus();
-
-		return;
-	}
-
-	function closeLightbox(lb){
-		speed = 500;
-		if($('.lightbox_bg').length > 0) $('.lightbox_bg').fadeOut(speed,function() { $(this).remove(); });
-		if(lb.length > 0){
-			lb.attr('role','');
-			var parent = lb.parent();
-			lb.fadeOut(speed,function(){
-				$(this).removeClass('lightbox_top');
-				me = $(this).detach();
-				me.appendTo(parent);
-			});
-		}
-		$('body').css('overflow-y','auto');
-		if(typeof fn=="function") fn.call();
-	}
-
-	function centre(lb){
-		var wide = $(window).width();
-		var tall = $(window).height();
-		var l = 0;
-		var t = 0;
-		if(lb.css('max-width').indexOf('px') > 0){
-			l = ((wide-lb.outerWidth())/2);
-			lb.css({left:((wide-lb.outerWidth())/2)+'px'});
-			if($(window).height() > lb.height()){
-				//t = (window.scrollY+(tall-lb.outerHeight())/2);
-				t = ((tall-lb.outerHeight())/2 + $(window).scrollTop());
-				$('body').css('overflow-y','hidden');
-			}
-		}
-		lb.css({left:l+"px",top:t+'px'});
 	}
 
 	// END HELPER FUNCTIONS

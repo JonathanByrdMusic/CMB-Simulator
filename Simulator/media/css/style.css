@@ -921,6 +921,81 @@ body.adv .column.advanced {
 }
 
 /* =========================================================
+   Literary footnotes
+   ========================================================= */
+
+.footnoteRef {
+    margin-left: 0.08em;
+
+    font-size: 0.72em;
+    line-height: 0;
+    vertical-align: super;
+}
+
+.footnoteRef a {
+    color: var(--so-blue);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.footnoteRef a:hover,
+.footnoteRef a:focus-visible {
+    color: var(--space-title);
+    text-decoration: underline;
+}
+
+.footnotes {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+
+    color: var(--space-muted);
+
+    border-top: 1px solid var(--space-border);
+
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.footnotes ol {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.footnotes li {
+    padding-left: 0.35rem;
+}
+
+.footnoteBack {
+    display: inline-block;
+    margin-left: 0.35rem;
+
+    color: var(--so-blue);
+    font-size: 0.9em;
+    text-decoration: none;
+}
+
+.footnoteBack:hover,
+.footnoteBack:focus-visible {
+    color: var(--space-title);
+    text-decoration: underline;
+}
+
+.visuallyHidden {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+
+    border: 0;
+}
+
+/* =========================================================
    Buttons
    ========================================================= */
 

@@ -66,8 +66,8 @@
 	
 	<div id="about">
 
-		<h3>The cosmic microwave background</h3>
-		<p>For the first 400,000 years after the Big Bang, the Universe was filled with hot, dense plasma that was opaque to light.  As the Universe expanded, the plasma cooled and thinned out, becoming transparent.  The last-scattered light appears as the cosmic microwave background (CMB). The <a href="http://www.esa.int/planck">Planck</a> satellite has been capturing the variations in the brightness of the cosmic microwave background over the entire sky at the highest precision ever achieved.</p>
+		<h3>The cosmic microwave background — by <a href="https://profiles.cardiff.ac.uk/staff/northce">Chris North</a></h3>
+		<p>For the first 400,000 years after the Big Bang, the Universe was filled with hot, dense plasma that was opaque to light.  As the Universe expanded, the plasma cooled and thinned out, becoming transparent.  The last-scattered light appears as the cosmic microwave background (CMB). The <a href="http://www.esa.int/planck">Planck</a> satellite has been capturing<sup class="footnoteRef"><a href="#footnote-1" id="footnote-ref-1b" aria-describedby="footnote-label">1</a></sup> the variations in the brightness of the cosmic microwave background over the entire sky at the highest precision ever achieved.</p>
 
 		<h3>Ingredients of the Universe</h3>
 		<p><strong class="b">Normal matter</strong> - The stuff you see around you: tables, buildings, planets, stars, etc.</p>
@@ -91,10 +91,34 @@
 		<p>The fluctuations in the temperature of the cosmic microwave background (CMB) are a snapshot of the distribution of matter at a much later cosmic epoch than inflation, as they date back to 380,000 years after inflation ended. In the meantime, the distribution of matter (the power spectrum) at small scales has been modified, but at very large scales an imprint of the original power spectrum that derives from inflation is still present. In particular, CMB fluctuations on very large scales carry information about the primordial spectral index n<sub>s</sub> and allow cosmologists to constrain the distribution of fluctuations as it was at the time of inflation. Furthermore, by measuring the spectral index and how much it is different from n<sub>s</sub> = 1, cosmologists can learn how long the phase of inflationary expansion lasted and how it ended, before the slower expansion rate began. The end of inflation is a particularly interesting epoch in cosmic history, because it is at this time that particles of matter were created for the first time.</p>
 
 		<h3>About Planck</h3>
-		<p>The <a href="http://www.esa.int/planck">Planck</a> satellite - a European Space Agency (ESA) mission launched in May 2009 - has surveyed the entire sky to search for the origin of the universe. One of the most technologically advanced satellites ever launched, its first cosmological results were released in March 2013.</p>
+		<p>The <a href="http://www.esa.int/planck">Planck</a> satellite - a European Space Agency (ESA) mission launched in May 2009 - surveyed the entire sky to search for the origin of the universe. One of the most technologically advanced satellites ever launched, its first cosmological results were released in March 2013<sup class="footnoteRef"><a href="#footnote-1" id="footnote-ref-1b" aria-describedby="footnote-label">1</a></sup>. </p>
 
 		<h3>Credits</h3>
 		<p>This CMB Simulator was created for the Royal Society <a href="http://sse.royalsociety.org/2013/">Summer Exhibition 2013</a>. The CMB Simulator <a href="https://github.com/chrisnorth/planckapps/tree/master/Simulator">code is on GitHub</a>. The simulated power spectrum data are from <a href="http://camb.info/">CAMB</a>.</p>
+
+		<section class="footnotes" aria-labelledby="footnote-label">
+    <h3 id="footnote-label" class="visuallyHidden">Footnotes</h3>
+
+    <ol>
+        <li id="footnote-1">
+            The Planck satellite was decommissioned in October 2013.
+            Polarization data was released by the team in 2015, and the
+            final mission papers were released in July 2018.
+
+            <a
+                class="footnoteBack"
+                href="#footnote-ref-1a"
+                aria-label="Return to first reference"
+            >↩</a>
+
+            <a
+                class="footnoteBack"
+                href="#footnote-ref-1b"
+                aria-label="Return to second reference"
+            >↩</a>
+        </li>
+    </ol>
+</section>
 
 	</div>
 
@@ -288,21 +312,30 @@
 
 		<p>
 			The colored image is a simulated map of the oldest light we can observe: 
-			the Cosmic Microwave Background. Small temperature differences in
-			this light carry information about the contents and history of the
+			the Cosmic Microwave Background. Small temperature differences in the light, called 
+			<strong>anisotropies</strong>, carry information about the contents and history of the 
 			universe. Move the sliders to change the amounts of <strong>normal matter</strong>, 
-			<strong>dark matter</strong>, and <strong>dark energy</strong>, and see how that changes the universe's age, 
-			geometry, and temperature fluctuations. Press the spacebar or touch the 
-			volume slider to hear the changes as sound.
+			<strong>dark matter</strong>, and <strong>dark energy</strong>, and see how that changes 
+			the universe's age, geometry, and temperature fluctuations. Press spacebar or touch the 
+			volume slider to hear the changes as sound. 
 		</p>
 
 		<p>
 			Click the "<strong>i</strong>" button to read more about the CMB. The next button brings 
 			up the <strong>power spectrum</strong>, which groups CMB fluctuations by their apparent 
-			size on the sky; the most common fluctuation are peaks in the graph. Clicking the 
-			<strong>audio</strong> button (or spacebar) will complement the power spectrum with a 
-			sound wave based on the same data. The <strong>refresh</strong> button generates a new 
-			random universe.
+			size on the sky; the most common fluctuations are peaks in the graph. Checking 
+			"Normalize scale" adjusts the range of the power spectrum to keep the peaks visible within 
+			the plot window. Clicking the <strong>audio</strong> button, pressing the spacebar, or 
+			touching the volume slider generates a sound based on the same data. The <strong>refresh</strong> 
+			button generates a new random universe.
+		</p>
+
+		<p> 
+			The sound you hear is a type of random noise that has equal power across
+			human hearing sensitivity. As anisotropies become more frequent across the sky, 
+			peaks in the power spectrum shift right, and the sound becomes higher in pitch. 
+			As the overall temperature of the CMB increases, peaks grow larger, and the sound becomes 
+			louder and "brighter," favoring higher frequencies.
 		</p>
 
 		<p>
