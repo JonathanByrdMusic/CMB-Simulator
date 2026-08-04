@@ -1856,29 +1856,14 @@ $('#normalizeScaleCheckbox').on(
 			return true;
 		}
 		// As we are using the hash anchor, we need to monitor it to check for changes
-		// Keep the About section open for its own internal footnote links.
 		setInterval(function(){
-
-			var hash = location.hash.substring(1);
-
-			var belongsToAbout =
-				hash === "about" ||
-				hash.indexOf("footnote-") === 0;
-
-			if(
-				belongsToAbout &&
-				!$('#help').hasClass('on')
-			){
+			if(location.hash.substring(1) === "about" && !$('#help').hasClass('on')) {
 				toggleAbout();
 			}
 
-			if(
-				!belongsToAbout &&
-				$('#help').hasClass('on')
-			){
+			if(location.hash.substring(1) !== "about" && $('#help').hasClass('on')) {
 				toggleAbout();
 			}
-
 		},500);
 
 		var newdiv = $('<div id="menu"><div id="help" class="toggle"><a href="#about" class="abouton" title="About the CMB">i</a><a href="#" class="aboutoff">&#8679;</a></div><div id="advancedtoggle" class="toggle"><a href="#powerspectrum"><img src="Simulator/media/img/cleardot.gif" alt="Plot" title="Power spectrum plot" /></a></div><div id="audiotoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Audio" title="Hear audio" /></a></div><div id="refreshtoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Refresh" title="Refresh page" /></a></div></div>');
