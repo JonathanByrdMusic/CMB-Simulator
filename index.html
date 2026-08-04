@@ -247,7 +247,17 @@
 				</form>
 			</div>
 
-			<div id="powerspectrum" class="column"></div>
+			<div id="powerSpectrumColumn" class="column advanced">
+				<div id="powerspectrum"></div>
+
+				<label class="normalizeScaleControl">
+					<input
+						type="checkbox"
+						id="normalizeScaleCheckbox"
+					>
+					<span>Normalize scale</span>
+				</label>
+			</div>
 
 			<div id="fft" class="column columnspecific">
 				<canvas id="spectrum"></canvas>
@@ -255,7 +265,7 @@
 
 			<div class="column columnspecific">
 				<div id="map">
-					<canvas id="result"><img src="Simulator/media/img/ouruniverse.jpg" class="our"></canvas>
+					<canvas id="result"></canvas>
 				</div>
 			</div>
 
@@ -272,11 +282,43 @@
 			<div id="similarity"></div>
 		</div>
 	</div>
-	
-	<div id="config">
-		<h2>Options</h2>
-		<form id="configform"></form>
-	</div>
+
+	<section id="simulatorExplanation">
+		<h2>Build a Universe</h2>
+
+		<p>
+			The colored image is a simulated map of the oldest light we can observe: 
+			the Cosmic Microwave Background. Small temperature differences in
+			this light carry information about the contents and history of the
+			universe. Move the sliders to change the amounts of <strong>normal matter</strong>, 
+			<strong>dark matter</strong>, and <strong>dark energy</strong>, and see how that changes the universe's age, 
+			geometry, and temperature fluctuations. Press the spacebar or touch the 
+			volume slider to hear the changes as sound.
+		</p>
+
+		<p>
+			Click the "<strong>i</strong>" button to read more about the CMB. The next button brings 
+			up the <strong>power spectrum</strong>, which groups CMB fluctuations by their apparent 
+			size on the sky; the most common fluctuation are peaks in the graph. Clicking the 
+			<strong>audio</strong> button (or spacebar) will complement the power spectrum with a 
+			sound wave based on the same data. The <strong>refresh</strong> button generates a new 
+			random universe.
+		</p>
+
+		<p>
+			Normal matter and dark matter both affect gravity, but they interact
+			differently with the early universe. Dark energy mainly affects the
+			universe's later expansion. Together, the three sliders determine
+			whether the model universe is open, flat, or closed and how long it has
+			taken to reach its present state.
+		</p>
+
+		<p>
+			Press <strong>Normal Matter Only</strong> to see what happens without
+			dark matter or dark energy. Press <strong>Our Universe</strong> to return
+			to values close to those measured in the real universe. 
+		</p>
+	</section>
 	
 </body>
 </html>

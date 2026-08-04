@@ -668,7 +668,7 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 					if(this.json.extrema[i][0]==val) break;
 				}
 
-				if(i >= this.json.extrema.length) this.callback.context.error("We couldn't find the CMB fluctuations for this universe (&Omega;<sub>b</sub> = "+b+", &Omega;<sub>c</sub> = "+c+", &Omega;<sub>&Lambda;</sub> = "+l+")That sucks. :-(");
+				if(i >= this.json.extrema.length) this.callback.context.error("We couldn't find the CMB fluctuations for this universe (&Omega;<sub>b</sub> = "+b+", &Omega;<sub>c</sub> = "+c+", &Omega;<sub>&Lambda;</sub> = "+l+") That sucks. :-(");
 				else {
 					data = new Array(this.json.extrema[i].length);
 					for(j = 0 ; j < this.json.extrema[i].length ; j++){
@@ -906,14 +906,26 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 
 		// Load the 'our universe' image
 		this.our = new Image();
-		this.loadedouruniverse = false;	// Have we loaded the image yet?
+		this.loadedouruniverse = false;
+
 		var _obj = this;
-		// Create a callback function for when we've loaded the image
-		this.our.onload = function(e){
+
+		this.our.onload = function () {
 			_obj.loadedouruniverse = true;
 			_obj.load();
 		};
-		this.our.src = this.el.find('img.our').attr('src');
+
+		this.our.onerror = function () {
+			/*
+			* Allow the simulated sky to load even if the comparison
+			* image cannot be found.
+			*/
+			_obj.loadedouruniverse = true;
+			_obj.showours = false;
+			_obj.load();
+		};
+
+		this.our.src = 'Simulator/media/img/ouruniverse.jpg';
 
 		// Set up the class to deal with the <canvas>
 		this.canvas = new Canvas({id:this.id,width:this.w, height: this.h});
@@ -1653,85 +1665,90 @@ this.context.audio.setHotness(hotness);
 
 		// Make option buttons
 		$('#options').append(
-			/*
-			$('<a class="button ouruniverse" href="#">Our universe</a>').on('click',{me:this},function(e){
-				e.preventDefault();
-				var sim = e.data.me;
-				sim.omega_b.setValue(sim.our.omega_b);
-				sim.omega_c.setValue(sim.our.omega_c);
-				sim.omega_l.setValue(sim.our.omega_l);
-				sim.ps.loadData('omega_b',sim.omega_b.value,sim.omega_c.value,sim.omega_l.value);
-			}),*/
-			$('<a class="button matteronly" href="#">NORMAL MATTER ONLY</a>').on('click',{me:this},function(e){
-				e.preventDefault();
-				var sim = e.data.me;
-				//sim.omega_b.setValue(0.20);
-				sim.omega_c.setValue(0.00);
-				sim.omega_l.setValue(0.00);
-				sim.ps.loadData('omega_b',sim.omega_b.value,sim.omega_c.value,sim.omega_l.value);
-			}),
-			$('<a class="button ouruniverse" href="#">OUR UNIVERSE</a>').on(
-				'click',
-				{ me: this },
-				function (e) {
-					e.preventDefault();
+    $('<a class="button matteronly" href="#">NORMAL MATTER ONLY</a>').on(
+        'click',
+        { me: this },
+        function (e) {
+            e.preventDefault();
 
-					var sim = e.data.me;
+            var sim = e.data.me;
 
-					sim.omega_b.setValue(sim.our.omega_b);
-					sim.omega_c.setValue(sim.our.omega_c);
-					sim.omega_l.setValue(sim.our.omega_l);
+            sim.omega_c.setValue(0.00);
+            sim.omega_l.setValue(0.00);
 
-					sim.ps.loadData(
-						'omega_b',
-						sim.omega_b.value,
-						sim.omega_c.value,
-						sim.omega_l.value
-					);
-				}
-			)
-		);
+            sim.ps.loadData(
+                'omega_b',
+                sim.omega_b.value,
+                sim.omega_c.value,
+                sim.omega_l.value
+            );
+        }
+    ),
 
-		// Set up the configuration form
-		$('#config form').append(
-    		'<div class="configoption"><input type="checkbox" name="showscale" /><label for="showscale">Show angular scale</label></div>' +
-    		'<div class="configoption"><input type="checkbox" name="showours" /><label for="showours">Show our universe</label></div>' +
-    		'<div class="configoption"><input type="checkbox" name="normscale" /><label for="normscale">Normalise scale</label></div>' +
-    		'<div class="configoption"><label for="volume">Audio volume</label>: <input type="range" name="volume" min="0" max="1" step="0.01" value="0.5" /></div>'
-		);
-		$('#config form input[name=volume]').on('input change',{me:this},function(e){
-    		var sim = e.data.me;
-    		var value = parseFloat($(this).val());
+    $('<a class="button ouruniverse" href="#">OUR UNIVERSE</a>').on(
+        'click',
+        { me: this },
+        function (e) {
+            e.preventDefault();
 
-    		sim.audio.masterVolume = value;
-    		sim.audio.setVolume(value);
-		});
-		$('#config form input[name=showscale]').attr('checked',this.sky.showscale).on('click',{me:this},function(e){
-			var sim = e.data.me;
-			sim.sky.showscale = $(this).is(':checked');
-			sim.ps.toggleTicks();
-			sim.update();
-		});
-		$('#config form input[name=showours]').attr('checked',this.sky.showours).on('click',{me:this},function(e){
-			var sim = e.data.me;
-			sim.sky.showours = $(this).is(':checked');
-			sim.sky.update();
-			sim.update();
-		});
-		$('#config form input[name=normscale]').attr('checked',!this.sky.fixedscale).on('click',{me:this},function(e){
-			var sim = e.data.me;
-			sim.sky.fixedscale = !$(this).is(':checked');
-			sim.ps.fixedscale = sim.sky.fixedscale;
-			sim.sky.update();
-			sim.ps.draw();
-			sim.update();
-		})
-		$('#config form select').on('change',{me:this},function(e){
-			e.data.me.sky.setColourTable($(this).val());
-			e.data.me.sky.update();
-			e.data.me.update();
-		});
+            var sim = e.data.me;
 
+            sim.omega_b.setValue(sim.our.omega_b);
+            sim.omega_c.setValue(sim.our.omega_c);
+            sim.omega_l.setValue(sim.our.omega_l);
+
+            sim.ps.loadData(
+                'omega_b',
+                sim.omega_b.value,
+                sim.omega_c.value,
+                sim.omega_l.value
+            );
+        }
+    )
+);
+
+var initialVolume =
+    typeof this.audio.masterVolume === 'number'
+        ? this.audio.masterVolume
+        : 0.5;
+
+var volumeControl = $(
+    '<div class="mainVolumeControl">' +
+        '<label for="mainVolumeSlider">Audio volume</label>' +
+        '<input ' +
+            'type="range" ' +
+            'id="mainVolumeSlider" ' +
+            'min="0" ' +
+            'max="1" ' +
+            'step="0.01" ' +
+            'value="' + initialVolume + '" ' +
+            'aria-label="Audio volume"' +
+        '>' +
+    '</div>'
+);
+
+$('#options').append(volumeControl);
+
+$('#mainVolumeSlider').on(
+    'input change',
+    { me: this },
+    function (e) {
+        var sim = e.data.me;
+        var value = parseFloat(this.value);
+
+        sim.audio.masterVolume = value;
+
+        if (!sim.audio.context) {
+            sim.audio.startTone();
+        }
+
+        sim.audio.setVolume(value);
+
+        if (sim.sky) {
+            sim.sky.update();
+        }
+    }
+);
 
 		// Bind keyboard events
 		$(document).bind('keydown',{sim:this},function(e){
@@ -1767,6 +1784,30 @@ this.context.audio.setHotness(hotness);
     else if(c=='f') sim.ps.toggleFullScreen();
 });
 
+var normalizeScaleCheckbox =
+    document.getElementById('normalizeScaleCheckbox');
+
+normalizeScaleCheckbox.checked = !this.ps.fixedscale;
+
+$('#normalizeScaleCheckbox').on(
+    'change',
+    { me: this },
+    function (e) {
+        var sim = e.data.me;
+        var normalizeScale = this.checked;
+
+        /*
+         * Checked:
+         * let the power spectrum choose its own y-axis range.
+         *
+         * Unchecked:
+         * use the fixed 0–8000 y-axis range.
+         */
+        sim.ps.fixedscale = !normalizeScale;
+        sim.ps.draw();
+    }
+);
+
 		// Bind window resize event for when people change the size of their browser
 		$(window).bind("resize",{me:this},function(ev){
 			ev.data.me.resize();
@@ -1796,7 +1837,7 @@ this.context.audio.setHotness(hotness);
 			if(location.hash.substring(1)!="about" && $('#help').hasClass('on')) toggleAbout();
 		},500);
 
-		var newdiv = $('<div id="menu"><div id="help" class="toggle"><a href="#about" class="abouton">i</a><a href="#" class="aboutoff">&#8679;</a></div><div id="advancedtoggle" class="toggle"><a href="#powerspectrum"><img src="Simulator/media/img/cleardot.gif" alt="Plot" title="Toggle power spectrum plot" /></a></div><div id="configtoggle" class="toggle"><a href="#config"><img src="Simulator/media/img/cleardot.gif" alt="Options" title="Toggle options" /></a></div><div id="audiotoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Audio" title="Toggle audio" /></a></div><div id="refreshtoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Refresh" title="Refresh page" /></a></div></div>');
+		var newdiv = $('<div id="menu"><div id="help" class="toggle"><a href="#about" class="abouton" title="About the CMB">i</a><a href="#" class="aboutoff">&#8679;</a></div><div id="advancedtoggle" class="toggle"><a href="#powerspectrum"><img src="Simulator/media/img/cleardot.gif" alt="Plot" title="Power spectrum plot" /></a></div><div id="audiotoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Audio" title="Hear audio" /></a></div><div id="refreshtoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Refresh" title="Refresh page" /></a></div></div>');
 		$('h1').before(newdiv);
 		$('#help .abouton a, #help .aboutoff a').on('click',toggleAbout);
 		$('#advancedtoggle a').on('click',{me:this},function(e){
@@ -1804,9 +1845,7 @@ this.context.audio.setHotness(hotness);
 			e.data.me.ps.toggle();
 			return true;
 		});
-		$('#configtoggle').on('click',{me:this},function(e){
-			lightbox($('#config'),$('#configtoggle'));
-		});
+
 		$('#audiotoggle').on('click',{me:this},function(e){
 			e.preventDefault();
 
