@@ -1868,6 +1868,26 @@ $('#normalizeScaleCheckbox').on(
 
 		var newdiv = $('<div id="menu"><div id="help" class="toggle"><a href="#about" class="abouton" title="About the CMB">i</a><a href="#" class="aboutoff">&#8679;</a></div><div id="advancedtoggle" class="toggle"><a href="#powerspectrum"><img src="Simulator/media/img/cleardot.gif" alt="Plot" title="Power spectrum plot" /></a></div><div id="audiotoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Audio" title="Hear audio" /></a></div><div id="refreshtoggle" class="toggle"><a href="#"><img src="Simulator/media/img/cleardot.gif" alt="Refresh" title="Refresh page" /></a></div></div>');
 		$('h1').before(newdiv);
+
+		// Open external About links in a new tab.
+		$('#about a').each(function() {
+
+			var href = $(this).attr('href');
+
+			if (
+				href &&
+				(
+					href.indexOf('http://') === 0 ||
+					href.indexOf('https://') === 0
+				)
+			) {
+				$(this).attr({
+					target: '_blank',
+					rel: 'noopener noreferrer'
+				});
+			}
+		});
+
 		$('#help .abouton a, #help .aboutoff a').on('click',toggleAbout);
 		$('#advancedtoggle a').on('click',{me:this},function(e){
 			e.preventDefault();
