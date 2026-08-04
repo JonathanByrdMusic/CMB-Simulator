@@ -334,7 +334,6 @@ body.adv #advancedtoggle a {
 }
 
 a.close {
-    display: inline-block;
     float: right;
 
     width: 1.5em;
