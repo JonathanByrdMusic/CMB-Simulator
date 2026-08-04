@@ -932,18 +932,6 @@ body.adv .column.advanced {
     vertical-align: super;
 }
 
-.footnoteRef a {
-    color: var(--so-blue);
-    font-weight: 700;
-    text-decoration: none;
-}
-
-.footnoteRef a:hover,
-.footnoteRef a:focus-visible {
-    color: var(--space-title);
-    text-decoration: underline;
-}
-
 .footnotes {
     margin-top: 2.5rem;
     padding-top: 1.25rem;
@@ -963,26 +951,6 @@ body.adv .column.advanced {
 
 .footnotes li {
     padding-left: 0.35rem;
-}
-
-.footnoteBack {
-    display: inline-block;
-    margin-left: 0.35rem;
-
-    color: var(--so-blue);
-    font-size: 0.9em;
-    text-decoration: none;
-}
-
-.footnoteBack:hover,
-.footnoteBack:focus-visible {
-    color: var(--space-title);
-    text-decoration: underline;
-}
-
-.footnoteRef,
-.footnotes li {
-    scroll-margin-top: 2rem;
 }
 
 .visuallyHidden {
