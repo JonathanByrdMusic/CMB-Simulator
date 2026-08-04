@@ -738,11 +738,12 @@ body.adv .column.advanced {
    ========================================================= */
 
 a.button {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-    min-height: 44px;
-    height: auto;
-    padding: 10px 22px;
+    min-height: 54px;
+    padding: 14px 28px;
 
     color: #ffffff;
     background: var(--so-orange);
@@ -750,20 +751,21 @@ a.button {
     border: 1px solid var(--so-orange);
     border-radius: 999px;
 
-    font-family: inherit;
-    font-size: 0.95rem;
-    line-height: 1.35;
+    font-family: "Figtree", Helvetica, Arial, sans-serif;
+    font-size: 0.98rem;
     font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: 0;
     text-decoration: none;
+    text-transform: uppercase;
+
+    cursor: pointer;
 
     transition:
         background-color 0.18s ease,
         border-color 0.18s ease,
+        color 0.18s ease,
         transform 0.08s ease;
-}
-
-a.button:visited {
-    color: #ffffff;
 }
 
 a.button:hover,
@@ -771,6 +773,7 @@ a.button:focus-visible {
     color: #ffffff;
     background: var(--space-panel-soft);
     border-color: var(--space-border);
+    text-decoration: none;
 }
 
 a.button:active {
@@ -796,6 +799,15 @@ a.button.ouruniverse:focus-visible {
     color: #ffffff;
     background: var(--space-panel-soft);
     border-color: var(--space-border);
+}
+
+#options a.button {
+    min-width: 250px;
+    margin-left: 16px;
+}
+
+#options a.button:first-child {
+    margin-left: 0;
 }
 
 /* =========================================================
