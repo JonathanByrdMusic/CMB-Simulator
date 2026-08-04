@@ -1628,7 +1628,7 @@ this.context.audio.setHotness(hotness);
 				sim.omega_l.setValue(sim.our.omega_l);
 				sim.ps.loadData('omega_b',sim.omega_b.value,sim.omega_c.value,sim.omega_l.value);
 			}),*/
-			$('<a class="button matteronly" href="#">Normal matter only</a>').on('click',{me:this},function(e){
+			$('<a class="button matteronly" href="#">NORMAL MATTER ONLY</a>').on('click',{me:this},function(e){
 				e.preventDefault();
 				var sim = e.data.me;
 				//sim.omega_b.setValue(0.20);
@@ -1636,7 +1636,7 @@ this.context.audio.setHotness(hotness);
 				sim.omega_l.setValue(0.00);
 				sim.ps.loadData('omega_b',sim.omega_b.value,sim.omega_c.value,sim.omega_l.value);
 			}),
-			$('<a class="button ouruniverse" href="#">Our universe</a>').on(
+			$('<a class="button ouruniverse" href="#">OUR UNIVERSE</a>').on(
 				'click',
 				{ me: this },
 				function (e) {
