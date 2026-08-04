@@ -613,15 +613,45 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 
 				this.pendingRequest = null;
 				this.json = data;
+				this.lastload = requestedFile;
 				this.getData(id, b, c, l);
 			},
 
 			error: function (xhr, status) {
-				// Aborting an obsolete request is expected, not an error.
 				if (
 					status === "abort" ||
 					requestNumber !== this.requestNumber
 				) {
+					return;
+				}
+
+				var sim = this.callback.context;
+
+				/*
+				* The requested file is selected using the two sliders
+				* other than the one currently being varied.
+				*
+				* Ignore the error when either of those fixed values
+				* has changed since the request began.
+				*/
+				var requestIsCurrent =
+					(
+						id === "omega_b" &&
+						sim.omega_c.value === c &&
+						sim.omega_l.value === l
+					) ||
+					(
+						id === "omega_c" &&
+						sim.omega_b.value === b &&
+						sim.omega_l.value === l
+					) ||
+					(
+						id === "omega_l" &&
+						sim.omega_b.value === b &&
+						sim.omega_c.value === c
+					);
+
+				if (!requestIsCurrent) {
 					return;
 				}
 
@@ -637,8 +667,6 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 				this.log(requestedFile);
 			}
 		});
-
-		this.lastload = file;
 
 	}
 
