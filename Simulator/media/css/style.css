@@ -980,6 +980,11 @@ body.adv .column.advanced {
     text-decoration: underline;
 }
 
+.footnoteRef,
+.footnotes li {
+    scroll-margin-top: 2rem;
+}
+
 .visuallyHidden {
     position: absolute;
 
