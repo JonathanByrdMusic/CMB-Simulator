@@ -162,6 +162,9 @@
 
 		this.chart = {};
 
+		this.pendingRequest = null;
+		this.requestNumber = 0;
+
 		// Define the options
 		this.setOptions();
 
@@ -585,25 +588,56 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		//$.ajaxSetup({async:false,'beforeSend': function(xhr){ if (xhr.overrideMimeType) xhr.overrideMimeType("text/plain"); } });
 
 		// Do the AJAX request for the data file
-		$.ajax({
+		// Cancel any request for a universe that is no longer current.
+		if (this.pendingRequest) {
+			this.pendingRequest.abort();
+		}
+
+		var requestNumber = ++this.requestNumber;
+		var requestedFile = file;
+		var _obj = this;
+
+		this.json = "";
+
+		this.pendingRequest = $.ajax({
 			dataType: "json",
-			url: file,
+			url: requestedFile,
 			context: _obj,
-			success: function(data){
-				// Keep a copy of the result
+			timeout: 4000,
+
+			success: function (data) {
+				// Ignore a response if a newer request has since started.
+				if (requestNumber !== this.requestNumber) {
+					return;
+				}
+
+				this.pendingRequest = null;
 				this.json = data;
-				// Process the result
-				this.getData(id,b,c,l);
+				this.getData(id, b, c, l);
 			},
-			error: function(e){
-				this.callback.context.error("We couldn't load the CMB fluctuations of this universe (&Omega;<sub>b</sub> = "+b+", &Omega;<sub>c</sub> = "+c+", &Omega;<sub>&Lambda;</sub> = "+l+"). That sucks. :-(");
-				this.log(file)
-			},
-			timeout: 4000
+
+			error: function (xhr, status) {
+				// Aborting an obsolete request is expected, not an error.
+				if (
+					status === "abort" ||
+					requestNumber !== this.requestNumber
+				) {
+					return;
+				}
+
+				this.pendingRequest = null;
+
+				this.callback.context.error(
+					"We couldn't load the CMB fluctuations for this universe " +
+					"(&Omega;<sub>b</sub> = " + b +
+					", &Omega;<sub>c</sub> = " + c +
+					", &Omega;<sub>&Lambda;</sub> = " + l + ")"
+				);
+
+				this.log(requestedFile);
+			}
 		});
 
-		// We'll keep a note of the file we loaded so that we don't
-		// pointlessly make multiple requests for the same one
 		this.lastload = file;
 
 	}
