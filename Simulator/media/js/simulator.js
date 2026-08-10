@@ -232,7 +232,12 @@
 			},
 			'yaxis': {
 				'min': 0,
-				'max': 8000,
+				'max': (
+					this.callback.context &&
+					this.callback.context.observationMode === 'polarization'
+				)
+					? 90
+					: 8000,
 				'label': {
 					'color': co,
 					'font' : ff
@@ -332,6 +337,58 @@
 			"font-family": this.opts.yaxis.label.font
 		}).rotate(270);
 
+		PowerSpectrum.prototype.setPolarizationSpectrum = function(
+			spectra
+		) {
+
+			if (
+				!spectra ||
+				!spectra.ell ||
+				!spectra.EE
+			) {
+				return;
+			}
+
+			var ell = spectra.ell.slice(0);
+			var power = new Array(ell.length);
+
+			/*
+			* The polarization database stores C_l^EE.
+			*
+			* Convert it back to the usual plotted quantity:
+			*
+			* D_l^EE = l(l+1) C_l^EE / (2 pi)
+			*/
+			for (
+				var i = 0;
+				i < ell.length;
+				i++
+			) {
+
+				var l = ell[i];
+
+				if (l >= 2) {
+
+					power[i] =
+						l *
+						(l + 1) *
+						spectra.EE[i] /
+						(2.0 * Math.PI);
+
+				} else {
+
+					power[i] = 0.0;
+				}
+			}
+
+			this.data = [
+				ell,
+				power
+			];
+
+			this.draw();
+		};
+
 		// Draw angular labels on chart
 		if(this.opts.xaxis.ticks){
 			var path = [];
@@ -382,8 +439,8 @@
 			this.callback.context &&
 			this.callback.context.observationMode === 'polarization'
 		) {
-			return "Polarization " +
-				ell + "(" + ell + "+1) C" + ell + " (μK²)";
+			return "E-mode polarization D" +
+    			ell + " EE (μK²)";
 		}
 
 		return "Anisotropy " +
@@ -1631,9 +1688,19 @@ Sky.prototype.updatePolarizationFromSpectrum = function(
                 return;
             }
 
-            _obj.generatePolarizationFromSpectrum(
-                spectra
-            );
+            if (
+				_obj.context &&
+				_obj.context.ps
+			) {
+
+				_obj.context.ps.setPolarizationSpectrum(
+					spectra
+				);
+			}
+
+			_obj.generatePolarizationFromSpectrum(
+				spectra
+			);
         }
     );
 };
@@ -2650,18 +2717,11 @@ Sky.prototype.polarizationVectorsFromQU = function(
 		if(!inp) inp = {};
 
 		// Define some callback functions
-		var change = function(e){
-
-			this.ps.getData(
-				e.id,
-				this.omega_b.value,
-				this.omega_c.value,
-				this.omega_l.value
-			);
+		var change = function(e) {
 
 			if (
-				this.sky &&
-				this.observationMode === "polarization"
+				this.observationMode === "polarization" &&
+				this.sky
 			) {
 
 				this.sky.updatePolarizationFromSpectrum(
@@ -2670,10 +2730,34 @@ Sky.prototype.polarizationVectorsFromQU = function(
 					this.omega_c.value,
 					this.omega_l.value
 				);
+
+				return;
 			}
+
+			/*
+			* Temperature mode continues to use
+			* the original TT database.
+			*/
+			this.ps.getData(
+				e.id,
+				this.omega_b.value,
+				this.omega_c.value,
+				this.omega_l.value
+			);
 		},
 		mouseenter = function(e){
-			this.ps.loadData(e.id,this.omega_b.value,this.omega_c.value,this.omega_l.value);
+
+			if (
+				this.observationMode === "temperature"
+			) {
+
+				this.ps.loadData(
+					e.id,
+					this.omega_b.value,
+					this.omega_c.value,
+					this.omega_l.value
+				);
+			}
 		}
 
         var _obj = this;
@@ -3073,23 +3157,41 @@ $('input[name="observationMode"]').on(
         $('#polarizationAudioExplanation')
             .prop('hidden', isTemperature);
 
+		/*
+		* Rebuild the plot because Temperature and
+		* Polarization use different y-axis scales.
+		*/
+		sim.ps.setOptions();
 		sim.ps.create();
-		sim.ps.draw();
-
-		if(sim.sky) {
-			sim.sky.update();
-		}
 
 		if (
 			sim.observationMode === 'polarization' &&
 			sim.sky
 		) {
+
 			sim.sky.updatePolarizationFromSpectrum(
 				"omega_b",
 				sim.omega_b.value,
 				sim.omega_c.value,
 				sim.omega_l.value
 			);
+
+		} else {
+
+			/*
+			* Switching back to Temperature restores
+			* the TT spectrum from the original database.
+			*/
+			sim.ps.loadData(
+				"omega_b",
+				sim.omega_b.value,
+				sim.omega_c.value,
+				sim.omega_l.value
+			);
+
+			if (sim.sky) {
+				sim.sky.update();
+			}
 		}
 
         console.log(
