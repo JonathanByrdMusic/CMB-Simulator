@@ -775,6 +775,17 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 	// Get the data for the current Omega values (b,c,l) using the current Omega that has focus
 	PowerSpectrum.prototype.getData = function(id,b,c,l){
 
+		/*
+		* TT data is allowed to update the shared
+		* power-spectrum plot only in Temperature mode.
+		*/
+		if (
+			this.callback.context &&
+			this.callback.context.observationMode !== "temperature"
+		) {
+			return;
+		}
+
 		// If the values haven't changed we don't need to recalculate the data
 		if(b==this.omega.b && c==this.omega.c && l==this.omega.l) return;
 
@@ -1737,10 +1748,18 @@ Sky.prototype.updatePolarizationFromSpectrum = function(
 				return;
 			}
 
-            if (
-				_obj.context &&
-				_obj.context.ps
+            /*
+			* EE data is allowed to update the shared plot
+			* only while Polarization mode is still active.
+			*/
+			if (
+				!_obj.context ||
+				_obj.context.observationMode !== "polarization"
 			) {
+				return;
+			}
+
+			if (_obj.context.ps) {
 
 				_obj.context.ps.setPolarizationSpectrum(
 					spectra
@@ -3375,23 +3394,22 @@ $('input[name="observationMode"]').on(
 				sim.omega_c.setRandom();
 				sim.omega_l.setRandom();
 
-				// Update the temperature power spectrum
-				sim.ps.loadData(
-					'omega_b',
-					sim.omega_b.value,
-					sim.omega_c.value,
-					sim.omega_l.value
-				);
-
-				// If we are viewing polarization, also load the
-				// polarization field for the new cosmology.
 				if (
-					sim.observationMode === 'polarization' &&
+					sim.observationMode === "polarization" &&
 					sim.sky
 				) {
 
 					sim.sky.updatePolarizationFromSpectrum(
-						'omega_b',
+						"omega_b",
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value
+					);
+
+				} else {
+
+					sim.ps.loadData(
+						"omega_b",
 						sim.omega_b.value,
 						sim.omega_c.value,
 						sim.omega_l.value
