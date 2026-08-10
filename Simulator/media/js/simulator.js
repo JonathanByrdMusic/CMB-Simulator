@@ -168,14 +168,17 @@
 		// Define the options
 		this.setOptions();
 
-		// Update the plot
-		this.create();
+		// Hide the power-spectrum panel initially.
+		// The chart will be created when the panel is first opened.
+		this.el.addClass('hidden');
 
 		// Load the initial data
-		this.loadData("omega_b",inp.omega_b,inp.omega_c,inp.omega_l);
-
-		// Hide it initially
-		this.el.toggleClass('hidden');
+		this.loadData(
+			"omega_b",
+			inp.omega_b,
+			inp.omega_c,
+			inp.omega_l
+		);
 
 		// Bind window resize event for when people change the size of their browser
 		$(window).on("resize",{me:this},function(ev){
@@ -337,7 +340,50 @@
 			"font-family": this.opts.yaxis.label.font
 		}).rotate(270);
 
-		PowerSpectrum.prototype.setPolarizationSpectrum = function(
+
+		// Draw angular labels on chart
+		if(this.opts.xaxis.ticks){
+			var path = [];
+			var txt = [];
+			var deglabels = [30,10,3,1,0.3,0.1];
+			var y,x,Xmin,Xmax,Xscale;
+			Xmin = this.scaleX(this.opts.xaxis.min);
+			Xmax = this.scaleX(this.opts.xaxis.max);
+			Xscale = (this.opts.offset.width) / (Xmax - Xmin);
+			for(var i = 0 ; i < deglabels.length ; i++){
+				var l = 180/deglabels[i];
+				var fs = this.opts['font-size']/2;
+				y = (this.opts.offset.top + this.opts.offset.height);
+				x = (this.opts.offset.left + Xscale * (this.scaleX(l) - Xmin) );
+				path = path.concat(["M",x,y,"L",x,y-fs]);
+				txt.push([x,y-fs-fs,deglabels[i]+deg]);
+			}
+			this.chart.xlines = this.chart.holder.path(path).attr({stroke:'#AAAAAA','stroke-width':1, "stroke-linejoin": "round"});
+			this.chart.xtext = this.chart.holder.set();
+			for(var i = 0 ; i < deglabels.length ; i++){
+				this.chart.xtext.push(this.chart.holder.text(txt[i][0],txt[i][1],txt[i][2]).attr({fill:'black', "text-anchor": "middle"}));
+			}
+		}
+	}
+
+	PowerSpectrum.prototype.toggleTicks = function(){
+		this.opts.xaxis.ticks = !this.opts.xaxis.ticks;
+		if(this.opts.xaxis.ticks){
+			this.chart.xlines.show();
+			this.chart.xtext.show();
+		}else{
+			this.chart.xlines.hide();
+			this.chart.xtext.hide();
+		}
+	}
+
+	// A scaling for the x-axis value
+	PowerSpectrum.prototype.scaleX = function(l){
+		if(l > 0) return Math.log(l*(l+1));
+		else return 0;
+	}
+
+	PowerSpectrum.prototype.setPolarizationSpectrum = function(
 			spectra
 		) {
 
@@ -388,48 +434,6 @@
 
 			this.draw();
 		};
-
-		// Draw angular labels on chart
-		if(this.opts.xaxis.ticks){
-			var path = [];
-			var txt = [];
-			var deglabels = [30,10,3,1,0.3,0.1];
-			var y,x,Xmin,Xmax,Xscale;
-			Xmin = this.scaleX(this.opts.xaxis.min);
-			Xmax = this.scaleX(this.opts.xaxis.max);
-			Xscale = (this.opts.offset.width) / (Xmax - Xmin);
-			for(var i = 0 ; i < deglabels.length ; i++){
-				var l = 180/deglabels[i];
-				var fs = this.opts['font-size']/2;
-				y = (this.opts.offset.top + this.opts.offset.height);
-				x = (this.opts.offset.left + Xscale * (this.scaleX(l) - Xmin) );
-				path = path.concat(["M",x,y,"L",x,y-fs]);
-				txt.push([x,y-fs-fs,deglabels[i]+deg]);
-			}
-			this.chart.xlines = this.chart.holder.path(path).attr({stroke:'#AAAAAA','stroke-width':1, "stroke-linejoin": "round"});
-			this.chart.xtext = this.chart.holder.set();
-			for(var i = 0 ; i < deglabels.length ; i++){
-				this.chart.xtext.push(this.chart.holder.text(txt[i][0],txt[i][1],txt[i][2]).attr({fill:'black', "text-anchor": "middle"}));
-			}
-		}
-	}
-
-	PowerSpectrum.prototype.toggleTicks = function(){
-		this.opts.xaxis.ticks = !this.opts.xaxis.ticks;
-		if(this.opts.xaxis.ticks){
-			this.chart.xlines.show();
-			this.chart.xtext.show();
-		}else{
-			this.chart.xlines.hide();
-			this.chart.xtext.hide();
-		}
-	}
-
-	// A scaling for the x-axis value
-	PowerSpectrum.prototype.scaleX = function(l){
-		if(l > 0) return Math.log(l*(l+1));
-		else return 0;
-	}
 
 	PowerSpectrum.prototype.getYLabel = function(){
 
@@ -618,9 +622,20 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 
 	// Function to hide/show the power spectrum
 	PowerSpectrum.prototype.toggle = function(){
+
 		this.el.toggleClass('hidden');
 		$('body').toggleClass('adv');
-		this.resize();
+
+		/*
+		* Build/rebuild the chart only after the panel
+		* is visible and has its final dimensions.
+		*/
+		if (!this.el.hasClass('hidden')) {
+
+			this.setOptions();
+			this.create();
+			this.draw();
+		}
 	}
 
 	// Will toggle as a full screen element if the browser supports it.
