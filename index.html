@@ -117,6 +117,27 @@
 		<div id="container">
 		
 			<div id="parameters" class="column">
+				 <div id="observationMode" class="observationMode">
+					<label>
+						<input
+							type="radio"
+							name="observationMode"
+							value="temperature"
+							checked
+						>
+						<span>Temperature</span>
+					</label>
+
+					<label>
+						<input
+							type="radio"
+							name="observationMode"
+							value="polarization"
+						>
+						<span>Polarization</span>
+					</label>
+				</div>
+
 				<form id="omegas">
 					<div id="omega_b_holder" class="parameter">
 						<label for="omega_b">Normal Matter <span class="advanced">(&Omega;<sub>b</sub><span class="omega_b"></span>)</span></label>
@@ -298,15 +319,36 @@
 	<section id="simulatorExplanation">
 		<h2>Build a Universe</h2>
 
-		<p>
-			The colored image is a simulated map of the oldest light we can observe: 
-			the Cosmic Microwave Background. Small temperature differences in the light, called 
-			<strong>anisotropies</strong>, carry information about the contents and history of the 
-			universe. Move the sliders to change the amounts of <strong>normal matter</strong>, 
-			<strong>dark matter</strong>, and <strong>dark energy</strong>, and see how that changes 
-			the universe's age, geometry, and temperature fluctuations. Press spacebar or touch the 
-			volume slider to hear the changes as sound. 
-		</p>
+		<div id="temperatureExplanation">
+
+			<p>
+				The colored image is a simulated map of the oldest light we can observe: 
+				the Cosmic Microwave Background. Small temperature differences in the light, called 
+				<strong>anisotropies</strong>, carry information about the contents and history of the 
+				universe. Move the sliders to change the amounts of <strong>normal matter</strong>, 
+				<strong>dark matter</strong>, and <strong>dark energy</strong>, and see how that changes 
+				the universe's age, geometry, and temperature fluctuations. Press spacebar or touch the 
+				volume slider to hear the changes as sound. 
+			</p>
+
+		</div>
+
+		<div id="polarizationExplanation" hidden>
+
+			<p>
+				The polarization image shows another property of the oldest light we can
+				observe: the orientation of its electric field. CMB light becomes linearly
+				polarized when it scatters from free electrons that see a quadrupole pattern
+				in the incoming radiation. The resulting polarization carries information
+				about conditions in the early universe that complements the temperature
+				anisotropies. Move the sliders to change the amounts of
+				<strong>normal matter</strong>, <strong>dark matter</strong>, and
+				<strong>dark energy</strong>, and see how that changes the universe's age,
+				geometry, and polarization pattern. Press spacebar or touch the volume
+				slider to hear the changes as sound.
+			</p>
+
+		</div>
 
 		<p>
 			Click the "<strong>i</strong>" button to read more about the CMB. The next button brings 
@@ -318,13 +360,29 @@
 			button generates a new random universe.
 		</p>
 
-		<p> 
-			The sound you hear is a type of random noise that has equal power across
-			human hearing sensitivity. As anisotropies become more frequent across the sky, 
-			peaks in the power spectrum shift right, and the sound becomes higher in pitch. 
-			As the overall temperature of the CMB increases, peaks grow larger, and the sound becomes 
-			louder and "brighter," favoring higher frequencies.
-		</p>
+		<div id="temperatureAudioExplanation">
+
+			<p> 
+				The sound you hear is a type of random noise that has equal power across
+				human hearing sensitivity. As anisotropies become more frequent across the sky, 
+				peaks in the power spectrum shift right, and the sound becomes higher in pitch. 
+				As the overall temperature of the CMB increases, peaks grow larger, and the sound becomes 
+				louder and "brighter," favoring higher frequencies.
+			</p>
+
+		</div>
+
+		<div id="polarizationAudioExplanation" hidden>
+
+			<p>
+				The polarization sonification represents both the strength and orientation
+				of the linear polarization. Stronger polarization produces a stronger sound,
+				while changes in polarization direction are represented through the spatial
+				position of the sound. Because linear polarization is unchanged by a
+				180-degree rotation, its orientation behaves as a spin-2 field.
+			</p>
+
+		</div>
 
 		<p>
 			Normal matter and dark matter both affect gravity, but they interact

@@ -1,2 +1,14 @@
+# Large raw Planck data
+Simulator/data/*.fits
+
+# Old polarization prototype database
+Simulator/pol_db_0.025/
+
+# Generated/raw polarization build products
+Simulator/db_pol_all/cache/
+Simulator/db_pol_all/spectra_cache/
+Simulator/db_pol_all/slices/
+
+# Local/system files
 .DS_Store
 **/.DS_Store

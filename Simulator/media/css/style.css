@@ -242,6 +242,40 @@ img.logo {
     height: 100%;
 }
 
+.observationMode {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+
+    margin-bottom: 34px;
+
+    color: var(--space-text);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.observationMode label {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    cursor: pointer;
+}
+
+.observationMode input[type="radio"] {
+    width: 19px;
+    height: 19px;
+    margin: 0;
+
+    accent-color: var(--so-blue);
+
+    cursor: pointer;
+}
+
+.observationMode label:hover span {
+    color: var(--space-title);
+}
+
 /* The help control contains two alternate links.
    Show only the one appropriate to the current state. */
 
@@ -848,7 +882,7 @@ body.adv .column.advanced {
     line-height: 1.65;
 }
 
-#simulatorExplanation p:last-child {
+#simulatorExplanation > p:last-child {
     margin-bottom: 0;
 }
 

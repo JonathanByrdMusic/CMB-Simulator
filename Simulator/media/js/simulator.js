@@ -304,16 +304,33 @@
 		this.chart.axes = this.chart.holder.rect(l,t,w,h).translate(0.5,-0.5).attr({stroke:'#AAAAAA','stroke-width':1});
 
 		// Draw the axes labels
-		this.chart.xLabel = this.chart.holder.text(l + w/2, t + h + b*0.5, "Scale on the sky").attr({fill: (this.opts.xaxis.label.color ? this.opts.xaxis.label.color : "black"),'font-size': this.opts.font,'font-family': this.opts.xaxis.label.font });
+		this.chart.xLabel = this.chart.holder.text(
+			l + w/2,
+			t + h + b*0.5,
+			"Scale on the sky"
+		).attr({
+			fill: (
+				this.opts.xaxis.label.color
+					? this.opts.xaxis.label.color
+					: "black"
+			),
+			'font-size': this.opts.font,
+			'font-family': this.opts.xaxis.label.font
+		});
+
 		this.chart.yLabel = this.chart.holder.text(
-    l*0.5,
-    t+(h/2),
-    "Anisotropy " + ell + "(" + ell + "+1) C" + ell + " (μK²)"
-).attr({
-    fill: (this.opts.yaxis.label.color ? this.opts.yaxis.label.color : "black"),
-    'font-size': this.opts.font,
-    'font-family': this.opts.yaxis.label.font
-}).rotate(270);
+			l * 0.5,
+			t + (h / 2),
+			this.getYLabel()
+		).attr({
+			fill: (
+				this.opts.yaxis.label.color
+					? this.opts.yaxis.label.color
+					: "black"
+			),
+			"font-size": this.opts.font,
+			"font-family": this.opts.yaxis.label.font
+		}).rotate(270);
 
 		// Draw angular labels on chart
 		if(this.opts.xaxis.ticks){
@@ -356,6 +373,22 @@
 		if(l > 0) return Math.log(l*(l+1));
 		else return 0;
 	}
+
+	PowerSpectrum.prototype.getYLabel = function(){
+
+		var ell = $("<div>").html('&#8467;').text();
+
+		if (
+			this.callback.context &&
+			this.callback.context.observationMode === 'polarization'
+		) {
+			return "Polarization " +
+				ell + "(" + ell + "+1) C" + ell + " (μK²)";
+		}
+
+		return "Anisotropy " +
+			ell + "(" + ell + "+1) C" + ell + " (μK²)";
+	};
 
 	// A scaling for the y-axis value
 PowerSpectrum.prototype.scaleY = function(l,cl){
@@ -904,6 +937,48 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		}
 	}
 
+	Sky.prototype.drawPolarizationVectors = function(vectors) {
+
+		var ctx = this.canvas.ctx;
+
+		ctx.save();
+
+		ctx.strokeStyle = "#ffffff";
+		ctx.lineCap = "round";
+		ctx.lineWidth = 1.2;
+
+		for (var i = 0; i < vectors.length; i++) {
+
+			var v = vectors[i];
+
+			var x = v.x;
+			var y = v.y;
+			var length = v.length_px;
+			var angle = v.psi_rad;
+
+			var dx = 0.5 * length * Math.cos(angle);
+			var dy = 0.5 * length * Math.sin(angle);
+
+			ctx.globalAlpha =
+				typeof v.opacity === "number"
+					? v.opacity
+					: 1.0;
+
+			ctx.beginPath();
+			ctx.moveTo(
+				x - dx,
+				y - dy
+			);
+			ctx.lineTo(
+				x + dx,
+				y + dy
+			);
+			ctx.stroke();
+		}
+
+		ctx.restore();
+	};
+
 	function Sky(inp){
 
 		// Use inp to set some basic properties
@@ -929,11 +1004,41 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		this.im = [];
 		this.src = "";
 
+		this.observedPolarizationVectors = null;
+		this.simulatedPolarizationVectors = null;
+
+		this.polarizationSpectrumSlices = {};
+		this.currentPolarizationSpectrum = null;
+		this.polarizationSpectrumRequestNumber = 0;
+
+		this.polarizationRealizationSeed = 1;
+		this.temperatureRealizationSeed = -1;
+
+		/*
+		* Global normalization measured over the complete
+		* 67,240-cosmology polarization database.
+		*/
+		this.polarizationGlobalP95 = 0.00259383069351;
+
+		var _obj = this;
+
+		$.getJSON(
+			'Simulator/data/smica_polarization_patch_vectors.json',
+			function(data) {
+				_obj.observedPolarizationVectors = data.vectors;
+
+				if (
+					_obj.context &&
+					_obj.context.observationMode === 'polarization'
+				) {
+					_obj.update();
+				}
+			}
+		);
+
 		// Load the 'our universe' image
 		this.our = new Image();
 		this.loadedouruniverse = false;
-
-		var _obj = this;
 
 		this.our.onload = function () {
 			_obj.loadedouruniverse = true;
@@ -1006,7 +1111,9 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		// We want the Fourier Transform of a sky with Gaussian distributed power on all scales
 
 		// Class for making Gaussian distributed random numbers. Argument is the seed.
-		var z = new Ziggurat(-1);
+		var z = new Ziggurat(
+			this.temperatureRealizationSeed
+		);
 		var twopi = 2*Math.PI;
 
 		var i = 0, y, x;
@@ -1145,28 +1252,87 @@ this.context.audio.setHotness(hotness);
 
 		}
 
-        this.canvas.ctx.putImageData(this.src, 0, 0);
+        if (
+			this.context.observationMode === 'polarization' &&
+			this.simulatedPolarizationVectors
+		) {
+
+			// Polarization mode: replace the temperature heat map
+			// with the simulated Q/U stick field.
+			this.canvas.ctx.fillStyle = "#0a0e1a";
+			this.canvas.ctx.fillRect(
+				0,
+				0,
+				this.w,
+				this.h
+			);
+
+			this.drawPolarizationVectors(
+				this.simulatedPolarizationVectors
+			);
+
+		} else {
+
+			// Temperature mode
+			this.canvas.ctx.putImageData(
+				this.src,
+				0,
+				0
+			);
+		}
 
         if(this.showours){
-            this.canvas.ctx.save();
 
-            this.canvas.ctx.beginPath();
-            this.canvas.ctx.moveTo(this.w,0);
-            this.canvas.ctx.lineTo(this.w*0.4,0);
-            this.canvas.ctx.lineTo(this.w,this.h*0.6);
-            this.canvas.ctx.lineTo(this.w,0);
-            this.canvas.ctx.clip();
+			this.canvas.ctx.save();
 
-            this.canvas.ctx.drawImage(this.our, 0, 0, this.w, this.h);
+			// Clip to the existing "Our universe" triangle
+			this.canvas.ctx.beginPath();
+			this.canvas.ctx.moveTo(this.w, 0);
+			this.canvas.ctx.lineTo(this.w * 0.4, 0);
+			this.canvas.ctx.lineTo(this.w, this.h * 0.6);
+			this.canvas.ctx.lineTo(this.w, 0);
+			this.canvas.ctx.clip();
 
-            this.canvas.ctx.restore();
+			if (
+				this.context.observationMode === 'polarization' &&
+				this.observedPolarizationVectors
+			) {
 
-            this.canvas.ctx.beginPath();
-            this.canvas.ctx.moveTo(this.w*0.4,0);
-            this.canvas.ctx.lineTo(this.w,this.h*0.6);
-            this.canvas.ctx.strokeStyle = "#fff";
-            this.canvas.ctx.stroke();
-        }
+				// Give the observed polarization region the same
+				// dark background as the preview.
+				this.canvas.ctx.fillStyle = "#0a0e1a";
+				this.canvas.ctx.fillRect(
+					0,
+					0,
+					this.w,
+					this.h
+				);
+
+				this.drawPolarizationVectors(
+					this.observedPolarizationVectors
+				);
+
+			} else {
+
+				this.canvas.ctx.drawImage(
+					this.our,
+					0,
+					0,
+					this.w,
+					this.h
+				);
+			}
+
+			this.canvas.ctx.restore();
+
+			// Draw the diagonal divider on top
+			this.canvas.ctx.beginPath();
+			this.canvas.ctx.moveTo(this.w * 0.4, 0);
+			this.canvas.ctx.lineTo(this.w, this.h * 0.6);
+			this.canvas.ctx.strokeStyle = "#fff";
+			this.canvas.ctx.globalAlpha = 1.0;
+			this.canvas.ctx.stroke();
+		}
 
     } catch(e) {
         this.log('update() fail');
@@ -1176,6 +1342,928 @@ this.context.audio.setHotness(hotness);
     this.log("Total for Sky.prototype.update():" + (new Date() - d) + "ms");
 }
 
+Sky.prototype.decodePolarizationSpectrum = function(
+    encoded,
+    expectedCount
+) {
+
+    var binary = atob(encoded);
+
+    if (
+        binary.length !== expectedCount * 4
+    ) {
+        console.log(
+            "Unexpected EE spectrum payload length:",
+            binary.length
+        );
+
+        return null;
+    }
+
+    var bytes =
+        new Uint8Array(
+            binary.length
+        );
+
+    for (
+        var i = 0;
+        i < binary.length;
+        i++
+    ) {
+        bytes[i] =
+            binary.charCodeAt(i);
+    }
+
+    var view =
+        new DataView(
+            bytes.buffer
+        );
+
+    var spectrum =
+        new Array(
+            expectedCount
+        );
+
+    for (
+        var i = 0;
+        i < expectedCount;
+        i++
+    ) {
+
+        spectrum[i] =
+            view.getFloat32(
+                i * 4,
+                true
+            );
+    }
+
+    return spectrum;
+};
+
+Sky.prototype.loadPolarizationSpectrum = function(
+    id,
+    omega_b,
+    omega_c,
+    omega_l,
+    callback
+) {
+
+	var requestNumber =
+    	++this.polarizationSpectrumRequestNumber;
+
+    /*
+     * Omega_b = 0 is deliberately absent from
+     * the polarization spectrum database.
+     */
+    if (omega_b <= 0) {
+
+        this.currentPolarizationSpectrum = null;
+
+        if (
+            typeof callback === "function"
+        ) {
+            callback(null);
+        }
+
+        return;
+    }
+
+
+    var file = "";
+    var key = "";
+
+
+    if (id === "omega_b") {
+
+        file =
+            "Simulator/db_pol_all/spectra_slices/" +
+            "Ob_Oc" +
+            omega_c.toFixed(3) +
+            "_Ol" +
+            omega_l.toFixed(3) +
+            ".json";
+
+        key =
+            omega_b.toFixed(3);
+
+    } else if (id === "omega_c") {
+
+        file =
+            "Simulator/db_pol_all/spectra_slices/" +
+            "Ob" +
+            omega_b.toFixed(3) +
+            "_Oc_Ol" +
+            omega_l.toFixed(3) +
+            ".json";
+
+        key =
+            omega_c.toFixed(3);
+
+    } else if (id === "omega_l") {
+
+        file =
+            "Simulator/db_pol_all/spectra_slices/" +
+            "Ob" +
+            omega_b.toFixed(3) +
+            "_Oc" +
+            omega_c.toFixed(3) +
+            "_Ol.json";
+
+        key =
+            omega_l.toFixed(3);
+
+    } else {
+
+        return;
+    }
+
+
+    var _obj = this;
+
+
+    var useModel = function(slice) {
+
+		// Ignore a spectrum request if a newer
+		// cosmology has since been requested.
+		if (
+			requestNumber !==
+			_obj.polarizationSpectrumRequestNumber
+		) {
+			return;
+		}
+
+        if (
+            !slice ||
+            !slice.ell ||
+            !slice.models ||
+            !slice.models[key]
+        ) {
+
+            console.log(
+                "No EE spectrum model:",
+                id,
+                key,
+                file
+            );
+
+            if (
+                typeof callback === "function"
+            ) {
+                callback(null);
+            }
+
+            return;
+        }
+
+
+        var ee =
+            _obj.decodePolarizationSpectrum(
+                slice.models[key].data,
+                slice.ell.length
+            );
+
+
+        if (!ee) {
+
+            if (
+                typeof callback === "function"
+            ) {
+                callback(null);
+            }
+
+            return;
+        }
+
+
+        _obj.currentPolarizationSpectrum = {
+            ell:
+                slice.ell,
+
+            EE:
+                ee
+        };
+
+
+        if (
+            typeof callback === "function"
+        ) {
+            callback(
+                _obj.currentPolarizationSpectrum
+            );
+        }
+    };
+
+
+    /*
+     * Use an already-loaded slice immediately.
+     */
+    if (
+        this.polarizationSpectrumSlices[file]
+    ) {
+
+        useModel(
+            this.polarizationSpectrumSlices[file]
+        );
+
+        return;
+    }
+
+
+    /*
+     * Otherwise fetch and cache the slice.
+     */
+    $.getJSON(
+        file,
+
+        function(data) {
+
+            _obj.polarizationSpectrumSlices[file] =
+                data;
+
+            useModel(
+                data
+            );
+        }
+    )
+    .fail(function() {
+
+        console.log(
+            "Polarization spectrum slice not available:",
+            file
+        );
+
+        if (
+            typeof callback === "function"
+        ) {
+            callback(null);
+        }
+    });
+};
+
+Sky.prototype.updatePolarizationFromSpectrum = function(
+    id,
+    omega_b,
+    omega_c,
+    omega_l
+) {
+
+    var _obj = this;
+
+    this.loadPolarizationSpectrum(
+        id,
+        omega_b,
+        omega_c,
+        omega_l,
+
+        function(spectra) {
+
+            if (!spectra) {
+
+                _obj.simulatedPolarizationVectors = [];
+
+                if (
+                    _obj.context &&
+                    _obj.context.observationMode === "polarization"
+                ) {
+                    _obj.update();
+                }
+
+                return;
+            }
+
+            _obj.generatePolarizationFromSpectrum(
+                spectra
+            );
+        }
+    );
+};
+
+Sky.prototype.interpolatePolarizationSpectrum = function(
+    ellGrid,
+    spectrum,
+    targetEll
+) {
+
+    var n = ellGrid.length;
+
+    if (
+        n < 2 ||
+        targetEll < ellGrid[0] ||
+        targetEll > ellGrid[n - 1]
+    ) {
+        return 0.0;
+    }
+
+
+    // Exact upper endpoint
+    if (
+        targetEll === ellGrid[n - 1]
+    ) {
+        return spectrum[n - 1];
+    }
+
+
+    // Binary search for the two stored multipoles
+    // surrounding targetEll.
+    var low = 0;
+    var high = n - 1;
+
+    while (
+        high - low > 1
+    ) {
+
+        var mid =
+            Math.floor(
+                (low + high) / 2
+            );
+
+        if (
+            ellGrid[mid] <= targetEll
+        ) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+
+
+    var ell0 =
+        ellGrid[low];
+
+    var ell1 =
+        ellGrid[high];
+
+    var value0 =
+        spectrum[low];
+
+    var value1 =
+        spectrum[high];
+
+
+    var fraction =
+        (
+            targetEll - ell0
+        )
+        /
+        (
+            ell1 - ell0
+        );
+
+
+    return (
+        value0 +
+        fraction *
+        (
+            value1 - value0
+        )
+    );
+};
+
+Sky.prototype.generatePolarizationFromSpectrum = function(
+    spectra
+) {
+
+    if (
+        !spectra ||
+        !spectra.ell ||
+        !spectra.EE
+    ) {
+
+        console.log(
+            "No EE polarization spectrum available"
+        );
+
+        return;
+    }
+
+
+    // -----------------------------------------------------
+    // New statistical realization
+    // -----------------------------------------------------
+
+    var seed =
+        this.polarizationRealizationSeed;
+
+    console.log(
+        "Generating polarization realization:",
+        seed
+    );
+
+
+    // -----------------------------------------------------
+    // Start with one Gaussian random field.
+    //
+    // EE alone completely specifies the marginal
+    // statistical distribution of the E-mode field.
+    // -----------------------------------------------------
+
+    var z =
+        new Ziggurat(
+            seed
+        );
+
+    var count =
+        this.w *
+        this.h;
+
+    var Ere =
+        new Array(
+            count
+        );
+
+    var Eim =
+        new Array(
+            count
+        );
+
+
+    for (
+        var i = 0;
+        i < count;
+        i++
+    ) {
+
+        Ere[i] =
+            z.nextGaussian();
+
+        Eim[i] =
+            0.0;
+    }
+
+
+    /*
+     * Real-space Gaussian white noise -> Fourier space.
+     *
+     * This automatically gives us the Hermitian
+     * symmetry required for a real spatial field.
+     */
+    FFT.fft2d(
+        Ere,
+        Eim
+    );
+
+
+    // -----------------------------------------------------
+    // Fourier-space Q and U
+    // -----------------------------------------------------
+
+    var qre =
+        new Array(
+            count
+        );
+
+    var qim =
+        new Array(
+            count
+        );
+
+    var ure =
+        new Array(
+            count
+        );
+
+    var uim =
+        new Array(
+            count
+        );
+
+
+    var dl =
+        this.dl;
+
+    var half =
+        this.w / 2;
+
+
+    for (
+        var y = 0;
+        y < this.h;
+        y++
+    ) {
+
+        var kyIndex =
+            (
+                y < half
+            )
+            ? y
+            : y - this.h;
+
+
+        for (
+            var x = 0;
+            x < this.w;
+            x++
+        ) {
+
+            var kxIndex =
+                (
+                    x < half
+                )
+                ? x
+                : x - this.w;
+
+
+            var index =
+                x +
+                y * this.w;
+
+
+            var radius =
+                Math.sqrt(
+                    kxIndex * kxIndex +
+                    kyIndex * kyIndex
+                );
+
+
+            var ell =
+                radius *
+                dl;
+
+
+            if (
+                ell < 2 ||
+                ell > 3000
+            ) {
+
+                qre[index] = 0.0;
+                qim[index] = 0.0;
+
+                ure[index] = 0.0;
+                uim[index] = 0.0;
+
+                continue;
+            }
+
+
+            var Cee =
+                this.interpolatePolarizationSpectrum(
+                    spectra.ell,
+                    spectra.EE,
+                    ell
+                );
+
+
+            if (
+                Cee <= 0.0
+            ) {
+
+                qre[index] = 0.0;
+                qim[index] = 0.0;
+
+                ure[index] = 0.0;
+                uim[index] = 0.0;
+
+                continue;
+            }
+
+
+            /*
+             * Shape the white-noise Fourier field
+             * according to the EE power spectrum.
+             */
+            var amplitude =
+                Math.sqrt(
+                    Cee
+                );
+
+
+            var eReal =
+                Ere[index] *
+                amplitude;
+
+            var eImag =
+                Eim[index] *
+                amplitude;
+
+
+            var phi =
+                Math.atan2(
+                    kyIndex,
+                    kxIndex
+                );
+
+
+            /*
+             * Pure E-mode polarization:
+             *
+             * Q(k) = E(k) cos(2 phi)
+             * U(k) = E(k) sin(2 phi)
+             */
+            var cos2phi =
+                Math.cos(
+                    2.0 *
+                    phi
+                );
+
+            var sin2phi =
+                Math.sin(
+                    2.0 *
+                    phi
+                );
+
+
+            qre[index] =
+                eReal *
+                cos2phi;
+
+            qim[index] =
+                eImag *
+                cos2phi;
+
+            ure[index] =
+                eReal *
+                sin2phi;
+
+            uim[index] =
+                eImag *
+                sin2phi;
+        }
+    }
+
+
+    // -----------------------------------------------------
+    // Fourier Q/U -> spatial Q/U
+    // -----------------------------------------------------
+
+    FFT.ifft2d(
+        qre,
+        qim
+    );
+
+    FFT.ifft2d(
+        ure,
+        uim
+    );
+
+
+    // -----------------------------------------------------
+    // Remove tiny numerical DC offsets
+    // -----------------------------------------------------
+
+    var qMean = 0.0;
+    var uMean = 0.0;
+
+
+    for (
+        var i = 0;
+        i < count;
+        i++
+    ) {
+
+        qMean +=
+            qre[i];
+
+        uMean +=
+            ure[i];
+    }
+
+
+    qMean /=
+        count;
+
+    uMean /=
+        count;
+
+
+    for (
+        var i = 0;
+        i < count;
+        i++
+    ) {
+
+        qre[i] -=
+            qMean;
+
+        ure[i] -=
+            uMean;
+    }
+
+
+    // -----------------------------------------------------
+    // 256x256 Q/U -> 14x14 displayed polarization sticks
+    // -----------------------------------------------------
+
+    this.simulatedPolarizationVectors =
+        this.polarizationVectorsFromQU(
+            qre,
+            ure
+        );
+
+
+    if (
+        this.context &&
+        this.context.observationMode ===
+            "polarization"
+    ) {
+
+        this.update();
+    }
+};
+
+Sky.prototype.polarizationVectorsFromQU = function(
+    Q,
+    U
+) {
+
+    var grid =
+        14;
+
+    var cellSize =
+        this.w /
+        grid;
+
+    var vectors =
+        [];
+
+    var globalP95 =
+        this.polarizationGlobalP95;
+
+    var minLength =
+        2.0;
+
+    var maxLength =
+        16.0;
+
+
+    for (
+        var gy = 0;
+        gy < grid;
+        gy++
+    ) {
+
+        for (
+            var gx = 0;
+            gx < grid;
+            gx++
+        ) {
+
+            /*
+             * Match the Python integer cell boundaries.
+             */
+            var x0 =
+                Math.floor(
+                    gx *
+                    cellSize
+                );
+
+            var x1 =
+                Math.floor(
+                    (gx + 1) *
+                    cellSize
+                );
+
+            var y0 =
+                Math.floor(
+                    gy *
+                    cellSize
+                );
+
+            var y1 =
+                Math.floor(
+                    (gy + 1) *
+                    cellSize
+                );
+
+
+            var qSum =
+                0.0;
+
+            var uSum =
+                0.0;
+
+            var samples =
+                0;
+
+
+            for (
+                var y = y0;
+                y < y1;
+                y++
+            ) {
+
+                for (
+                    var x = x0;
+                    x < x1;
+                    x++
+                ) {
+
+                    var index =
+                        x +
+                        y *
+                        this.w;
+
+                    qSum +=
+                        Q[index];
+
+                    uSum +=
+                        U[index];
+
+                    samples++;
+                }
+            }
+
+
+            var q =
+                qSum /
+                samples;
+
+            var u =
+                uSum /
+                samples;
+
+
+            var p =
+                Math.sqrt(
+                    q * q +
+                    u * u
+                );
+
+
+            var amplitude =
+                p /
+                globalP95;
+
+            if (
+                amplitude > 1.0
+            ) {
+                amplitude = 1.0;
+            }
+
+            if (
+                amplitude < 0.0
+            ) {
+                amplitude = 0.0;
+            }
+
+
+            var psi =
+                0.5 *
+                Math.atan2(
+                    u,
+                    q
+                );
+
+            /*
+             * Polarization orientation is headless,
+             * so put psi into [0, pi).
+             */
+            psi =
+                (
+                    psi %
+                    Math.PI +
+                    Math.PI
+                )
+                %
+                Math.PI;
+
+
+            var length =
+                minLength +
+                amplitude *
+                (
+                    maxLength -
+                    minLength
+                );
+
+
+            var opacity =
+                0.20 +
+                0.80 *
+                amplitude;
+
+
+            vectors.push({
+
+                x:
+                    (
+                        gx + 0.5
+                    ) *
+                    cellSize,
+
+                y:
+                    (
+                        gy + 0.5
+                    ) *
+                    cellSize,
+
+                length_px:
+                    length,
+
+                psi_rad:
+                    psi,
+
+                opacity:
+                    opacity,
+
+                normalized_p:
+                    amplitude
+            });
+        }
+    }
+
+
+    return vectors;
+};
 
 	/**
 	 * Fast Fourier Transform
@@ -1544,6 +2632,8 @@ this.context.audio.setHotness(hotness);
 	// The main function
 	function Simulator(inp){
 
+		this.observationMode = 'temperature';
+
 		// A place to cache the previous Omega values
 		this.previous = { omega_b: -1, omega_c: -1, omega_l: -1 };
 		this.exhibition = false;
@@ -1561,13 +2651,32 @@ this.context.audio.setHotness(hotness);
 
 		// Define some callback functions
 		var change = function(e){
-			this.ps.getData(e.id,this.omega_b.value,this.omega_c.value,this.omega_l.value);
+
+			this.ps.getData(
+				e.id,
+				this.omega_b.value,
+				this.omega_c.value,
+				this.omega_l.value
+			);
+
+			if (
+				this.sky &&
+				this.observationMode === "polarization"
+			) {
+
+				this.sky.updatePolarizationFromSpectrum(
+					e.id,
+					this.omega_b.value,
+					this.omega_c.value,
+					this.omega_l.value
+				);
+			}
 		},
 		mouseenter = function(e){
 			this.ps.loadData(e.id,this.omega_b.value,this.omega_c.value,this.omega_l.value);
 		}
 
-		var _obj = this;
+        var _obj = this;
 
 		// Set up the three Omega sliders
         this.omega_b = new ParameterSlider({
@@ -1688,48 +2797,155 @@ this.context.audio.setHotness(hotness);
 		this.sky = new Sky(inp);
 
 
-		// Make option buttons
-		$('#options').append(
-    $('<a class="button matteronly" href="#">NORMAL MATTER ONLY</a>').on(
-        'click',
-        { me: this },
-        function (e) {
-            e.preventDefault();
+	// Make option buttons
+	$('#options').append(
 
-            var sim = e.data.me;
+		$('<a class="button matteronly" href="#">NORMAL MATTER ONLY</a>').on(
+			'click',
+			{ me: this },
+			function (e) {
+				e.preventDefault();
 
-            sim.omega_c.setValue(0.00);
-            sim.omega_l.setValue(0.00);
+				var sim = e.data.me;
 
-            sim.ps.loadData(
-                'omega_b',
-                sim.omega_b.value,
-                sim.omega_c.value,
-                sim.omega_l.value
-            );
-        }
-    ),
+				sim.omega_c.setValue(0.00);
+				sim.omega_l.setValue(0.00);
 
-    $('<a class="button ouruniverse" href="#">OUR UNIVERSE</a>').on(
-        'click',
-        { me: this },
-        function (e) {
-            e.preventDefault();
+				sim.ps.loadData(
+					'omega_b',
+					sim.omega_b.value,
+					sim.omega_c.value,
+					sim.omega_l.value
+				);
 
-            var sim = e.data.me;
+				if (
+					sim.observationMode === "polarization" &&
+					sim.sky
+				) {
+					sim.sky.updatePolarizationFromSpectrum(
+						"omega_b",
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value
+					);
+				}
+			}
+		),
 
-            sim.omega_b.setValue(sim.our.omega_b);
-            sim.omega_c.setValue(sim.our.omega_c);
-            sim.omega_l.setValue(sim.our.omega_l);
+		$('<a class="button ouruniverse" href="#">OUR UNIVERSE</a>').on(
+			'click',
+			{ me: this },
+			function (e) {
 
-            sim.ps.loadData(
-                'omega_b',
-                sim.omega_b.value,
-                sim.omega_c.value,
-                sim.omega_l.value
-            );
-        }
-    )
+				e.preventDefault();
+
+				var sim = e.data.me;
+
+				sim.omega_b.setValue(
+					sim.our.omega_b
+				);
+
+				sim.omega_c.setValue(
+					sim.our.omega_c
+				);
+
+				sim.omega_l.setValue(
+					sim.our.omega_l
+				);
+
+				sim.ps.loadData(
+					'omega_b',
+					sim.our.omega_b,
+					sim.our.omega_c,
+					sim.our.omega_l
+				);
+
+				if (
+					sim.observationMode === "polarization" &&
+					sim.sky
+				) {
+					sim.sky.updatePolarizationFromSpectrum(
+						"omega_b",
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value
+					);
+				}
+			}
+		)
+
+		,
+
+		$('<a class="button newsky" href="#">NEW SKY</a>').on(
+			'click',
+			{ me: this },
+			function (e) {
+
+				e.preventDefault();
+
+				var sim = e.data.me;
+
+
+				// ---------------------------------------------
+				// Temperature:
+				//
+				// Keep the cosmology fixed, but generate a new
+				// Gaussian realization of the temperature sky.
+				// ---------------------------------------------
+
+				if (
+					sim.observationMode === "temperature" &&
+					sim.sky
+				) {
+
+					// Change the random realization while
+					// keeping the cosmology fixed.
+					sim.sky.temperatureRealizationSeed++;
+
+					sim.sky.setupFFT();
+					sim.sky.update();
+
+					return;
+				}
+
+				// ---------------------------------------------
+				// Polarization:
+				//
+				// Keep the cosmology fixed, load its EE spectrum,
+				// and draw a new statistical realization.
+				// ---------------------------------------------
+
+				if (
+					sim.observationMode === "polarization" &&
+					sim.sky
+				) {
+
+					// NEW SKY is the only action that changes
+					// the polarization random realization.
+					sim.sky.polarizationRealizationSeed++;	
+
+					sim.sky.loadPolarizationSpectrum(
+						"omega_b",
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value,
+
+						function(spectra) {
+
+							if (!spectra) {
+								return;
+							}
+
+							sim.sky.generatePolarizationFromSpectrum(
+								spectra
+							);
+						}
+					);
+
+					return;
+				}
+				}
+		)
 );
 
 var initialVolume =
@@ -1833,6 +3049,56 @@ $('#normalizeScaleCheckbox').on(
     }
 );
 
+$('input[name="observationMode"]').on(
+    'change',
+    { me: this },
+    function(e) {
+
+        var sim = e.data.me;
+
+        sim.observationMode = this.value;
+
+        var isTemperature =
+            sim.observationMode === 'temperature';
+
+        $('#temperatureExplanation')
+            .prop('hidden', !isTemperature);
+
+        $('#polarizationExplanation')
+            .prop('hidden', isTemperature);
+
+        $('#temperatureAudioExplanation')
+            .prop('hidden', !isTemperature);
+
+        $('#polarizationAudioExplanation')
+            .prop('hidden', isTemperature);
+
+		sim.ps.create();
+		sim.ps.draw();
+
+		if(sim.sky) {
+			sim.sky.update();
+		}
+
+		if (
+			sim.observationMode === 'polarization' &&
+			sim.sky
+		) {
+			sim.sky.updatePolarizationFromSpectrum(
+				"omega_b",
+				sim.omega_b.value,
+				sim.omega_c.value,
+				sim.omega_l.value
+			);
+		}
+
+        console.log(
+            'Observation mode:',
+            sim.observationMode
+        );
+    }
+);
+
 		// Bind window resize event for when people change the size of their browser
 		$(window).bind("resize",{me:this},function(ev){
 			ev.data.me.resize();
@@ -1915,13 +3181,46 @@ $('#normalizeScaleCheckbox').on(
 
 		});
 
-        $('#refreshtoggle').on('click',{me:this},function(e){
-            var sim=e.data.me;
-            sim.omega_b.setRandom();
-            sim.omega_c.setRandom();
-    		sim.omega_l.setRandom();
-    		sim.ps.loadData('omega_b',sim.omega_b.value,sim.omega_c.value,sim.omega_l.value);
-		});
+        $('#refreshtoggle').on(
+			'click',
+			{ me:this },
+			function(e) {
+
+				e.preventDefault();
+
+				var sim = e.data.me;
+
+				// Pick a new random cosmology
+				sim.omega_b.setRandom();
+				sim.omega_c.setRandom();
+				sim.omega_l.setRandom();
+
+				// Update the temperature power spectrum
+				sim.ps.loadData(
+					'omega_b',
+					sim.omega_b.value,
+					sim.omega_c.value,
+					sim.omega_l.value
+				);
+
+				// If we are viewing polarization, also load the
+				// polarization field for the new cosmology.
+				if (
+					sim.observationMode === 'polarization' &&
+					sim.sky
+				) {
+
+					sim.sky.updatePolarizationFromSpectrum(
+						'omega_b',
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value
+					);
+				}
+
+				return false;
+			}
+		);
 
 		// Update labels, buttons etc
 		this.update();
