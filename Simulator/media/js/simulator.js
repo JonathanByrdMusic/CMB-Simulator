@@ -1691,17 +1691,35 @@ Sky.prototype.updatePolarizationFromSpectrum = function(
 
             if (!spectra) {
 
-                _obj.simulatedPolarizationVectors = [];
+				_obj.simulatedPolarizationVectors = [];
 
-                if (
-                    _obj.context &&
-                    _obj.context.observationMode === "polarization"
-                ) {
-                    _obj.update();
-                }
+				/*
+				* Omega_b = 0 has no polarization spectrum.
+				* Clear the previous EE curve so stale data
+				* cannot remain visible or drive the viewer.
+				*/
+				if (
+					_obj.context &&
+					_obj.context.ps
+				) {
 
-                return;
-            }
+					_obj.context.ps.data = [
+						[2, 100, 1000, 3000],
+						[0, 0, 0, 0]
+					];
+
+					_obj.context.ps.draw();
+				}
+
+				if (
+					_obj.context &&
+					_obj.context.observationMode === "polarization"
+				) {
+					_obj.update();
+				}
+
+				return;
+			}
 
             if (
 				_obj.context &&
