@@ -2944,18 +2944,21 @@ Sky.prototype.polarizationVectorsFromQU = function(
 				sim.omega_c.setValue(0.00);
 				sim.omega_l.setValue(0.00);
 
-				sim.ps.loadData(
-					'omega_b',
-					sim.omega_b.value,
-					sim.omega_c.value,
-					sim.omega_l.value
-				);
-
 				if (
 					sim.observationMode === "polarization" &&
 					sim.sky
 				) {
+
 					sim.sky.updatePolarizationFromSpectrum(
+						"omega_b",
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value
+					);
+
+				} else {
+
+					sim.ps.loadData(
 						"omega_b",
 						sim.omega_b.value,
 						sim.omega_c.value,
@@ -2986,18 +2989,21 @@ Sky.prototype.polarizationVectorsFromQU = function(
 					sim.our.omega_l
 				);
 
-				sim.ps.loadData(
-					'omega_b',
-					sim.our.omega_b,
-					sim.our.omega_c,
-					sim.our.omega_l
-				);
-
 				if (
 					sim.observationMode === "polarization" &&
 					sim.sky
 				) {
+
 					sim.sky.updatePolarizationFromSpectrum(
+						"omega_b",
+						sim.omega_b.value,
+						sim.omega_c.value,
+						sim.omega_l.value
+					);
+
+				} else {
+
+					sim.ps.loadData(
 						"omega_b",
 						sim.omega_b.value,
 						sim.omega_c.value,
@@ -3190,6 +3196,24 @@ $('input[name="observationMode"]').on(
         var sim = e.data.me;
 
         sim.observationMode = this.value;
+
+		/*
+		* If we are entering polarization mode,
+		* invalidate any temperature-spectrum request
+		* that may still be in flight.
+		*/
+		if (
+			sim.observationMode === "polarization" &&
+			sim.ps
+		) {
+
+			if (sim.ps.pendingRequest) {
+				sim.ps.pendingRequest.abort();
+				sim.ps.pendingRequest = null;
+			}
+
+			sim.ps.requestNumber++;
+		}
 
         var isTemperature =
             sim.observationMode === 'temperature';
