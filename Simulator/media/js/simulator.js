@@ -1711,6 +1711,22 @@ Sky.prototype.updatePolarizationFromSpectrum = function(
 					_obj.context.ps.draw();
 				}
 
+				/*
+				* Restore the user-facing error message.
+				*/
+				if (
+					_obj.context &&
+					typeof _obj.context.error === "function"
+				) {
+
+					_obj.context.error(
+						"We couldn't load CMB polarization for this universe " +
+						"(&Omega;<sub>b</sub> = " + omega_b +
+						", &Omega;<sub>c</sub> = " + omega_c +
+						", &Omega;<sub>&Lambda;</sub> = " + omega_l + ")"
+					);
+				}
+
 				if (
 					_obj.context &&
 					_obj.context.observationMode === "polarization"
