@@ -3228,19 +3228,24 @@ $('input[name="observationMode"]').on(
 		} else {
 
 			/*
-			* Switching back to Temperature restores
-			* the TT spectrum from the original database.
+			* Polarization replaces ps.data with EE data.
+			*
+			* Force the temperature spectrum to be
+			* reconstructed even if the cosmological
+			* parameters themselves have not changed.
 			*/
+			sim.ps.omega = {
+				b: "",
+				c: "",
+				l: ""
+			};
+
 			sim.ps.loadData(
 				"omega_b",
 				sim.omega_b.value,
 				sim.omega_c.value,
 				sim.omega_l.value
 			);
-
-			if (sim.sky) {
-				sim.sky.update();
-			}
 		}
 
         console.log(
