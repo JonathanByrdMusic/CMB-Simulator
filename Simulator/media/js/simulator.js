@@ -1103,6 +1103,9 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		*/
 		this.polarizationGlobalP95 = 0.00259383069351;
 
+		this.polarizationGlobalSigmaMax =
+    		9.328382038188115;
+
 		var _obj = this;
 
 		$.getJSON(
@@ -1683,6 +1686,74 @@ Sky.prototype.loadPolarizationSpectrum = function(
     });
 };
 
+Sky.prototype.getPolarizationStrengthFromSpectrum = function(
+    spectra
+) {
+
+    if (
+        !spectra ||
+        !spectra.ell ||
+        !spectra.EE
+    ) {
+        return 0.0;
+    }
+
+    var variance = 0.0;
+
+    for (
+        var ell = 2;
+        ell <= 3000;
+        ell++
+    ) {
+
+        var Cee =
+            this.interpolatePolarizationSpectrum(
+                spectra.ell,
+                spectra.EE,
+                ell
+            );
+
+        variance +=
+            (
+                2.0 * ell +
+                1.0
+            ) *
+            Cee;
+    }
+
+    variance /=
+        (
+            4.0 *
+            Math.PI
+        );
+
+    variance =
+        Math.max(
+            0.0,
+            variance
+        );
+
+    var sigmaE =
+        Math.sqrt(
+            variance
+        );
+
+    var strength =
+        sigmaE /
+        this.polarizationGlobalSigmaMax;
+
+    strength =
+        Math.max(
+            0.0,
+            Math.min(
+                1.0,
+                strength
+            )
+        );
+
+    return strength;
+};
+
 Sky.prototype.updatePolarizationFromSpectrum = function(
     id,
     omega_b,
@@ -1764,12 +1835,42 @@ Sky.prototype.updatePolarizationFromSpectrum = function(
 				_obj.context.ps.setPolarizationSpectrum(
 					spectra
 				);
+
+				/*
+				* Sonify the new EE spectrum.
+				*
+				* setPolarizationSpectrum() has just replaced
+				* ps.data with the plotted EE D_l spectrum,
+				* so the existing spectrum-to-EQ routine can
+				* now read it.
+				*/
+				if (
+					typeof _obj.context.updateAudioEQFromSpectrum ===
+					"function"
+				) {
+
+					_obj.context.updateAudioEQFromSpectrum();
+				}
 			}
+
+			var polarizationStrength =
+				_obj.getPolarizationStrengthFromSpectrum(
+					spectra
+				);
+
+			_obj.context.audio.setPolarizationStrength(
+				polarizationStrength
+			);
+
+			console.log(
+				"Polarization strength:",
+				polarizationStrength
+			);
 
 			_obj.generatePolarizationFromSpectrum(
 				spectra
 			);
-        }
+		}	
     );
 };
 
@@ -2787,6 +2888,12 @@ Sky.prototype.polarizationVectorsFromQU = function(
 		// Define some callback functions
 		var change = function(e) {
 
+			/*
+			* Update the ordinary simulator UI immediately:
+			* Omega labels, age, curvature, similarity, etc.
+			*/
+			this.update();
+
 			if (
 				this.observationMode === "polarization" &&
 				this.sky
@@ -3215,6 +3322,10 @@ $('input[name="observationMode"]').on(
         var sim = e.data.me;
 
         sim.observationMode = this.value;
+
+		sim.audio.setObservationMode(
+			sim.observationMode
+		);
 
 		/*
 		* If we are entering polarization mode,
