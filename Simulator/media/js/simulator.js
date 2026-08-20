@@ -1106,6 +1106,17 @@ PowerSpectrum.prototype.drawYTicks = function(Ymin, Ymax){
 		this.polarizationGlobalSigmaMax =
     		9.328382038188115;
 
+		/*
+		* Track the range of polarization coherence values
+		* encountered while exploring cosmologies.
+		*/
+		this.polarizationCoherenceMin =
+			Infinity;
+
+		this.polarizationCoherenceMax =
+			-Infinity;
+
+
 		var _obj = this;
 
 		$.getJSON(
@@ -2497,9 +2508,191 @@ Sky.prototype.polarizationVectorsFromQU = function(
         }
     }
 
+	    // -----------------------------------------------------
+		// Measure neighboring polarization-orientation coherence
+		//
+		// Linear polarization is unchanged by a 180-degree
+		// rotation, so compare orientations using:
+		//
+		//     cos[2(psi_i - psi_j)]
+		//
+		// Neighboring sticks that point in nearly the same
+		// direction contribute values near +1.
+		//
+		// Rapidly changing orientations average toward 0.
+		//
+		// Weight each pair by its polarization strength so that
+		// extremely faint sticks do not dominate the result.
+		// -----------------------------------------------------
 
-    return vectors;
-};
+		var coherenceSum =
+			0.0;
+
+		var coherenceWeight =
+			0.0;
+
+
+		var addNeighborPair = function(
+			a,
+			b
+		) {
+
+			var weight =
+				Math.sqrt(
+					a.normalized_p *
+					b.normalized_p
+				);
+
+
+			if (
+				weight <= 0
+			) {
+				return;
+			}
+
+
+			var alignment =
+				Math.cos(
+					2.0 *
+					(
+						a.psi_rad -
+						b.psi_rad
+					)
+				);
+
+
+			coherenceSum +=
+				weight *
+				alignment;
+
+			coherenceWeight +=
+				weight;
+		};
+
+
+		for (
+			var gy = 0;
+			gy < grid;
+			gy++
+		) {
+
+			for (
+				var gx = 0;
+				gx < grid;
+				gx++
+			) {
+
+				var index =
+					gx +
+					gy *
+					grid;
+
+
+				/*
+				* Compare with the stick immediately
+				* to the right.
+				*/
+				if (
+					gx <
+					grid - 1
+				) {
+
+					addNeighborPair(
+						vectors[index],
+						vectors[index + 1]
+					);
+				}
+
+
+				/*
+				* Compare with the stick immediately
+				* below.
+				*/
+				if (
+					gy <
+					grid - 1
+				) {
+
+					addNeighborPair(
+						vectors[index],
+						vectors[index + grid]
+					);
+				}
+			}
+		}
+
+
+		var coherence =
+			0.0;
+
+
+		if (
+			coherenceWeight >
+			0
+		) {
+
+			coherence =
+				coherenceSum /
+				coherenceWeight;
+		}
+
+
+		/*
+		* Random / rapidly changing orientations should
+		* correspond to low coherence.
+		*
+		* Clamp the result into the 0-1 range expected
+		* by the audio system.
+		*/
+		coherence =
+			Math.max(
+				0.0,
+				Math.min(
+					1.0,
+					coherence
+				)
+			);
+
+
+		this.polarizationCoherenceMin =
+			Math.min(
+				this.polarizationCoherenceMin,
+				coherence
+			);
+
+		this.polarizationCoherenceMax =
+			Math.max(
+				this.polarizationCoherenceMax,
+				coherence
+			);
+
+
+		if (
+			this.context &&
+			this.context.audio &&
+			typeof this.context.audio.setPolarizationCoherence ===
+				"function"
+		) {
+
+			this.context.audio.setPolarizationCoherence(
+				coherence
+			);
+		}
+
+
+		console.log(
+			"Polarization coherence:",
+			coherence,
+			"MIN:",
+			this.polarizationCoherenceMin,
+			"MAX:",
+			this.polarizationCoherenceMax
+		);
+
+
+		return vectors;
+
+	};
 
 	/**
 	 * Fast Fourier Transform

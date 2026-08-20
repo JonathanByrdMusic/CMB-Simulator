@@ -34,19 +34,27 @@ function CMBAudio() {
     // Polarization sonification
     // ---------------------------------------------------------
 
-    this.polarizationCenterSource = null;
-    this.polarizationLeftSource = null;
-    this.polarizationRightSource = null;
+    this.polarizationSource = null;
+    this.polarizationGain = null;
+    this.polarizationFilters = [];
 
-    this.polarizationCenterGain = null;
-    this.polarizationLeftGain = null;
-    this.polarizationRightGain = null;
+    this.polarizationChorusDelay = null;
+    this.polarizationChorusLFO = null;
+    this.polarizationChorusDepth = null;
 
-    this.polarizationCenterFilters = [];
-    this.polarizationLeftFilters = [];
-    this.polarizationRightFilters = [];
+    this.polarizationChorusDryGain = null;
+    this.polarizationChorusWetGain = null;
 
     this.polarizationStrength = 0.0;
+    this.polarizationCoherence = 0.5;
+
+    /*
+    * Largest coherence encountered during testing.
+    * Used to map the naturally occurring range
+    * onto 0...1 for the sonification.
+    */
+    this.polarizationCoherenceReference =
+        0.6762396219877641;
 
 
     // ---------------------------------------------------------
@@ -384,27 +392,8 @@ function CMBAudio() {
         }
     };
 
-
-    // =========================================================
-    // POLARIZATION VOICE BUILDER
-    //
-    // Same basic spectral-subtraction technique as Temperature:
-    //
-    // source -------- dry --------------------+
-    //    \                                      \
-    //     +---- EQ ---- inverted (-1) ----------+--> sum
-    //
-    // Then:
-    //
-    // sum -> delay -> pan -> gain -> polarization bus
-    // =========================================================
-
     this.createPolarizationVoice = function(
-        buffer,
-        cents,
-        delaySeconds,
-        panValue,
-        filterStore
+        buffer
     ) {
 
         var source =
@@ -415,9 +404,6 @@ function CMBAudio() {
 
         source.loop =
             true;
-
-        source.detune.value =
-            0;
 
 
         var dryGain =
@@ -441,7 +427,79 @@ function CMBAudio() {
             1.0;
 
 
-        // Dry branch
+        this.polarizationGain =
+            this.context.createGain();
+
+        this.polarizationGain.gain.value =
+            this.polarizationStrength;
+
+        /*
+        * Mono chorus stage.
+        *
+        * The polarization signal is mixed with a slightly
+        * delayed copy of itself. A slow LFO varies the delay.
+        *
+        * Coherence controls how far the delay moves:
+        *
+        * high coherence -> little motion
+        * low coherence  -> stronger swirling chorus
+        */
+
+        this.polarizationChorusDelay =
+            this.context.createDelay(
+                0.05
+            );
+
+        this.polarizationChorusDelay.delayTime.value =
+            0.012;
+
+
+        this.polarizationChorusDryGain =
+            this.context.createGain();
+
+        this.polarizationChorusDryGain.gain.value =
+            0.70;
+
+
+        this.polarizationChorusWetGain =
+            this.context.createGain();
+
+        this.polarizationChorusWetGain.gain.value =
+            0.35;
+
+
+        this.polarizationChorusLFO =
+            this.context.createOscillator();
+
+        this.polarizationChorusLFO.type =
+            "sine";
+
+        this.polarizationChorusLFO.frequency.value =
+            0.35;
+
+
+        this.polarizationChorusDepth =
+            this.context.createGain();
+
+        this.polarizationChorusDepth.gain.value =
+            0.0;
+
+
+        /*
+        * The LFO modulates the delay time directly.
+        */
+        this.polarizationChorusLFO.connect(
+            this.polarizationChorusDepth
+        );
+
+        this.polarizationChorusDepth.connect(
+            this.polarizationChorusDelay.delayTime
+        );
+
+
+        /*
+        * Dry branch
+        */
         source.connect(
             dryGain
         );
@@ -451,12 +509,14 @@ function CMBAudio() {
         );
 
 
-        // EQ-shaped inverted branch
+        /*
+        * EE-filtered, polarity-inverted branch
+        */
         var filteredOutput =
             this.createEQChain(
                 source,
-                cents,
-                filterStore,
+                0,
+                this.polarizationFilters,
                 this.polarizationEQSettings
             );
 
@@ -469,53 +529,43 @@ function CMBAudio() {
         );
 
 
-        // Delay
-        var delay =
-            this.context.createDelay(
-                0.1
-            );
-
-        delay.delayTime.value =
-            delaySeconds;
-
-
-        // Stereo pan
-        var panner =
-            this.context.createStereoPanner();
-
-        panner.pan.value =
-            panValue;
-
-
-        // Voice level
-        var outputGain =
-            this.context.createGain();
-
-
+        /*
+        * Dry chorus branch
+        */
         sumGain.connect(
-            delay
+            this.polarizationChorusDryGain
         );
 
-        delay.connect(
-            panner
+        this.polarizationChorusDryGain.connect(
+            this.polarizationGain
         );
 
-        panner.connect(
-            outputGain
+
+        /*
+        * Delayed chorus branch
+        */
+        sumGain.connect(
+            this.polarizationChorusDelay
         );
 
-        outputGain.connect(
+        this.polarizationChorusDelay.connect(
+            this.polarizationChorusWetGain
+        );
+
+        this.polarizationChorusWetGain.connect(
+            this.polarizationGain
+        );
+
+
+        /*
+        * Both branches are summed back to mono here.
+        */
+        this.polarizationGain.connect(
             this.polarizationBus
         );
 
 
-        return {
-            source:
-                source,
-
-            outputGain:
-                outputGain
-        };
+        return source;
     };
 
 
@@ -689,110 +739,19 @@ function CMBAudio() {
 
         // =====================================================
         // POLARIZATION
-        //
-        // Relative timing:
-        //
-        // Right   = 0 ms
-        // Center  = 10 ms
-        // Left    = 20 ms
-        //
-        // Therefore relative to center:
-        //
-        // Right   = -10 ms
-        // Left    = +10 ms
         // =====================================================
 
-        this.polarizationCenterFilters =
+        this.polarizationFilters =
             [];
 
-        this.polarizationLeftFilters =
-            [];
-
-        this.polarizationRightFilters =
-            [];
-
-
-        var centerVoice =
+        this.polarizationSource =
             this.createPolarizationVoice(
-                pinkNoiseBuffer,
-                0,
-                0.010,
-                0,
-                this.polarizationCenterFilters
+                pinkNoiseBuffer
             );
 
-
-        var leftVoice =
-            this.createPolarizationVoice(
-                pinkNoiseBuffer,
-                -6,
-                0.020,
-                -1,
-                this.polarizationLeftFilters
-            );
-
-
-        var rightVoice =
-            this.createPolarizationVoice(
-                pinkNoiseBuffer,
-                6,
-                0.000,
-                1,
-                this.polarizationRightFilters
-            );
-
-
-        this.polarizationCenterSource =
-            centerVoice.source;
-
-        this.polarizationLeftSource =
-            leftVoice.source;
-
-        this.polarizationRightSource =
-            rightVoice.source;
-
-
-        this.polarizationCenterGain =
-            centerVoice.outputGain;
-
-        this.polarizationLeftGain =
-            leftVoice.outputGain;
-
-        this.polarizationRightGain =
-            rightVoice.outputGain;
-
-
-        // -----------------------------------------------------
-        // Initial polarization width
-        // -----------------------------------------------------
-
-        var initialAngle =
-            this.polarizationStrength *
-            Math.PI /
-            2;
-
-
-        var initialCenter =
-            Math.cos(
-                initialAngle
-            );
-
-
-        var initialSide =
-            Math.sin(
-                initialAngle
-            ) /
-            Math.sqrt(2);
-
-
-        this.polarizationCenterGain.gain.value =
-            initialCenter;
-
-        this.polarizationLeftGain.gain.value =
-            initialSide;
-
-        this.polarizationRightGain.gain.value =
-            initialSide;
+        this.setPolarizationCoherence(
+            this.polarizationCoherence
+        );
 
 
         // -----------------------------------------------------
@@ -812,15 +771,11 @@ function CMBAudio() {
             startTime
         );
 
-        this.polarizationCenterSource.start(
+        this.polarizationSource.start(
             startTime
         );
 
-        this.polarizationLeftSource.start(
-            startTime
-        );
-
-        this.polarizationRightSource.start(
+        this.polarizationChorusLFO.start(
             startTime
         );
 
@@ -840,9 +795,8 @@ function CMBAudio() {
         var sources = [
             this.noiseSource,
             this.blueNoiseSource,
-            this.polarizationCenterSource,
-            this.polarizationLeftSource,
-            this.polarizationRightSource
+            this.polarizationSource,
+            this.polarizationChorusLFO
         ];
 
 
@@ -888,34 +842,29 @@ function CMBAudio() {
             [];
 
 
-        this.polarizationCenterSource =
+        this.polarizationSource =
             null;
 
-        this.polarizationLeftSource =
+        this.polarizationGain =
             null;
 
-        this.polarizationRightSource =
-            null;
-
-
-        this.polarizationCenterGain =
-            null;
-
-        this.polarizationLeftGain =
-            null;
-
-        this.polarizationRightGain =
-            null;
-
-
-        this.polarizationCenterFilters =
+        this.polarizationFilters =
             [];
 
-        this.polarizationLeftFilters =
-            [];
+        this.polarizationChorusDelay =
+            null;
 
-        this.polarizationRightFilters =
-            [];
+        this.polarizationChorusLFO =
+            null;
+
+        this.polarizationChorusDepth =
+            null;
+
+        this.polarizationChorusDryGain =
+            null;
+
+        this.polarizationChorusWetGain =
+            null;
 
 
         this.temperatureBus =
@@ -933,85 +882,239 @@ function CMBAudio() {
 
 
     // =========================================================
-    // SPECTRUM -> AUDIO EQ
-    // =========================================================
+// POLARIZATION COHERENCE -> FILTER Q
+// =========================================================
 
-    this.setSpectrumEQ = function(
-        settings
+this.updatePolarizationFilters = function() {
+
+    if (
+        !this.context ||
+        !this.polarizationFilters ||
+        this.polarizationFilters.length === 0
+    ) {
+        return;
+    }
+
+
+    var now =
+        this.context.currentTime;
+
+    var rampTime =
+        0.15;
+
+
+    for (
+        var i = 0;
+        i < this.polarizationFilters.length;
+        i++
     ) {
 
-        if (
-            this.observationMode ===
-            "polarization"
-        ) {
+        var setting =
+            this.polarizationEQSettings[i];
 
-            this.polarizationEQSettings =
-                this.normalizedEQSettings(
-                    settings
-                );
 
-            this.updateFilterBank(
-                this.polarizationCenterFilters,
-                this.polarizationEQSettings,
-                0
+        this.polarizationFilters[i].frequency
+            .cancelScheduledValues(
+                now
             );
 
-            this.updateFilterBank(
-                this.polarizationLeftFilters,
-                this.polarizationEQSettings,
-                -6
+        this.polarizationFilters[i].gain
+            .cancelScheduledValues(
+                now
             );
 
-            this.updateFilterBank(
-                this.polarizationRightFilters,
-                this.polarizationEQSettings,
-                6
+        this.polarizationFilters[i].Q
+            .cancelScheduledValues(
+                now
             );
 
-            this.polarizationReady =
-                true;
 
-            /*
-            * If Polarization is currently selected,
-            * bring its bus up only now that valid EE
-            * settings have arrived.
-            */
-            if (
-                this.context &&
-                this.polarizationBus
-            ) {
-
-                var now =
-                    this.context.currentTime;
-
-                this.polarizationBus.gain
-                    .cancelScheduledValues(
-                        now
-                    );
-
-                this.polarizationBus.gain
-                    .setTargetAtTime(
-                        1.0,
-                        now,
-                        0.05
-                    );
-            }
-
-            return;
-        }
+        this.polarizationFilters[i].frequency
+            .setTargetAtTime(
+                setting.frequency,
+                now,
+                rampTime
+            );
 
 
-        this.temperatureEQSettings =
+        this.polarizationFilters[i].gain
+            .setTargetAtTime(
+                setting.gain,
+                now,
+                rampTime
+            );
+
+
+        /*
+         * Q now comes only from the EE-spectrum
+         * sonification itself.
+         */
+        this.polarizationFilters[i].Q
+            .setTargetAtTime(
+                setting.q,
+                now,
+                rampTime
+            );
+    }
+};
+
+
+// =========================================================
+// SET POLARIZATION COHERENCE
+// =========================================================
+
+this.setPolarizationCoherence = function(
+    coherence
+) {
+
+    this.polarizationCoherence =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                coherence
+            )
+        );
+
+
+    /*
+     * Map the naturally occurring coherence range
+     * onto 0...1.
+     */
+    var normalizedCoherence =
+        this.polarizationCoherence /
+        this.polarizationCoherenceReference;
+
+
+    normalizedCoherence =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                normalizedCoherence
+            )
+        );
+
+
+    /*
+     * Decoherence controls chorus depth.
+     */
+    var decoherence =
+        1.0 -
+        normalizedCoherence;
+
+
+    /*
+     * Delay modulation:
+     *
+     * high coherence -> nearly fixed 12 ms delay
+     * low coherence  -> delay swings by up to ±6 ms
+     *
+     * Web Audio delayTime is measured in seconds.
+     */
+    var modulationDepth =
+        0.006 *
+        decoherence;
+
+
+    if (
+        !this.context ||
+        !this.polarizationChorusDepth
+    ) {
+        return;
+    }
+
+
+    var now =
+        this.context.currentTime;
+
+
+    this.polarizationChorusDepth.gain
+        .cancelScheduledValues(
+            now
+        );
+
+
+    this.polarizationChorusDepth.gain
+        .setTargetAtTime(
+            modulationDepth,
+            now,
+            0.20
+        );
+
+
+    console.log(
+        "Audio coherence:",
+        this.polarizationCoherence,
+        "normalized:",
+        normalizedCoherence,
+        "chorus depth:",
+        modulationDepth
+    );
+};
+
+
+// =========================================================
+// SPECTRUM -> AUDIO EQ
+// =========================================================
+
+this.setSpectrumEQ = function(
+    settings
+) {
+
+    if (
+        this.observationMode ===
+        "polarization"
+    ) {
+
+        this.polarizationEQSettings =
             this.normalizedEQSettings(
                 settings
             );
 
-        this.updateFilterBank(
-            this.filters,
-            this.temperatureEQSettings,
-            0
+        this.updatePolarizationFilters();
+
+        this.polarizationReady =
+            true;
+
+
+        if (
+            this.context &&
+            this.polarizationBus
+        ) {
+
+            var now =
+                this.context.currentTime;
+
+            this.polarizationBus.gain
+                .cancelScheduledValues(
+                    now
+                );
+
+            this.polarizationBus.gain
+                .setTargetAtTime(
+                    1.0,
+                    now,
+                    0.05
+                );
+        }
+
+        return;
+    }
+
+
+    this.temperatureEQSettings =
+        this.normalizedEQSettings(
+            settings
         );
-    };
+
+
+    this.updateFilterBank(
+        this.filters,
+        this.temperatureEQSettings,
+        0
+    );
+};
 
 
     // =========================================================
@@ -1099,7 +1202,7 @@ function CMBAudio() {
 
 
     // =========================================================
-    // POLARIZATION STRENGTH -> STEREO WIDTH
+    // POLARIZATION STRENGTH -> VOLUME
     // =========================================================
 
     this.setPolarizationStrength = function(
@@ -1118,9 +1221,7 @@ function CMBAudio() {
 
         if (
             !this.context ||
-            !this.polarizationCenterGain ||
-            !this.polarizationLeftGain ||
-            !this.polarizationRightGain
+            !this.polarizationGain
         ) {
             return;
         }
@@ -1129,66 +1230,18 @@ function CMBAudio() {
         var now =
             this.context.currentTime;
 
-        var rampTime =
-            0.20;
 
-
-        var angle =
-            this.polarizationStrength *
-            Math.PI /
-            2;
-
-
-        var center =
-            Math.cos(
-                angle
-            );
-
-
-        var side =
-            Math.sin(
-                angle
-            ) /
-            Math.sqrt(2);
-
-
-        this.polarizationCenterGain.gain
-            .cancelScheduledValues(
-                now
-            );
-
-        this.polarizationLeftGain.gain
-            .cancelScheduledValues(
-                now
-            );
-
-        this.polarizationRightGain.gain
+        this.polarizationGain.gain
             .cancelScheduledValues(
                 now
             );
 
 
-        this.polarizationCenterGain.gain
+        this.polarizationGain.gain
             .setTargetAtTime(
-                center,
+                this.polarizationStrength,
                 now,
-                rampTime
-            );
-
-
-        this.polarizationLeftGain.gain
-            .setTargetAtTime(
-                side,
-                now,
-                rampTime
-            );
-
-
-        this.polarizationRightGain.gain
-            .setTargetAtTime(
-                side,
-                now,
-                rampTime
+                0.20
             );
     };
 
